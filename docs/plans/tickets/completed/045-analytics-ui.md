@@ -83,3 +83,10 @@ Built as the Python/Jinja frontend (ADR-0013), not React — the ticket's `Analy
   `backend/app/templates/base.html` (nav link), `backend/app/static/brink.css`,
   `backend/tests/test_pages.py`. Satisfies **UI-7/UI-8/AN-9** partially (clustering live; popularity
   data + predict widget arrive with T36). Full suite green (295).
+
+## Follow-up fix (post-merge)
+`/analytics` initially rendered the **logged-out** nav for a signed-in visitor: the route
+authenticated the user (the analytics content rendered) but forgot to pass `viewer` to the
+template, so `base.html` fell back to its public header (Features / How it works / Sign in).
+Fixed by passing `viewer=require_user(...)` to the template; added a regression test asserting the
+signed-in nav (`/auth/logout` link present, no "Log in with Spotify") on the analytics page.
