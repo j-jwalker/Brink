@@ -1161,3 +1161,8 @@ def test_analytics_page_renders_with_pending_states(client, db_session, monkeypa
     assert "Popularity model" in body            # section is present
     assert "aren't ready yet" in body            # clustering pending state
     assert "once the popularity model is trained" in body  # popularity pending state (fills in at T36)
+    # Regression guard: a signed-in visitor must get the signed-in nav, not the logged-out
+    # header. The route originally forgot to pass `viewer`, so the nav fell back to
+    # Features/How it works/Sign in even though the analytics content rendered.
+    assert 'href="/auth/logout"' in body         # "Log out" -> signed-in nav is present
+    assert "Log in with Spotify" not in body     # logged-out header must NOT show here

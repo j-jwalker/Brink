@@ -543,14 +543,18 @@ def _analytics_data(session: Session) -> dict:
 def analytics_page(request: Request, session: Session = Depends(get_session)):
     refreshed = Response()
     try:
-        require_user(request, session=session, response=refreshed)
+        viewer = require_user(request, session=session, response=refreshed)
     except AuthError:
         return RedirectResponse("/auth/login", status_code=303)
 
+    # Pass `viewer` so base.html renders the signed-in nav (Feed / My profile / Analytics /
+    # Log out). Without it the shared nav falls back to its logged-out header even though the
+    # visitor is signed in — the whole reason this page looked "logged out" (the analytics
+    # content only renders because require_user succeeded above).
     page = templates.TemplateResponse(
         request,
         "analytics.html",
-        {"page_title": "Analytics · Brink", "a": _analytics_data(session)},
+        {"page_title": "Analytics · Brink", "a": _analytics_data(session), "viewer": viewer},
     )
     for key, value in refreshed.raw_headers:
         if key == b"set-cookie":
