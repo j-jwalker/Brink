@@ -858,3 +858,21 @@ textarea.composer-caption { resize: vertical; min-height: 2.75rem; }
   padding: 0.6rem 0.75rem;
   font-size: 0.9rem;
 }
+
+/* ---- Analytics page (T45) ---- */
+.stat-row { display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 0 0 0.75rem; }
+.stat { color: var(--mute); font-size: 0.9rem; }
+.stat b { color: var(--text); font-size: 1.15rem; font-variant-numeric: tabular-nums; margin-right: 0.25rem; }
+.cluster-list, .importance-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.cluster, .importance {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
+}
+.cluster-label { font-weight: 600; }
+.cluster-size, .importance span:last-child { color: var(--mute); font-variant-numeric: tabular-nums; }
+.analytics-pending { margin: 0; color: var(--mute); font-size: 0.92rem; line-height: 1.5; }

@@ -49,7 +49,7 @@ The catalog of requirement IDs (`AUTH-*`, `BE-*`, …) and the **requirement →
 | AN-6 | Popularity regression; persist R²/RMSE/feature-importances. | T36 | ◻ |
 | AN-7 † | Aggregations: top tracks/genres/artists, streak, 30-day totals. *(computed live in the Python API, no `UserStats` table)* | T44, T14, T102 | ◧ (T44: top **tracks/artists**, streak, 30-day totals done live over `Play` in `app/stats.py`; T102 adds a batched per-(author, track) play count on feed cards over the same `Play` data; top **genres** still deferred to T14, needs the T31 Kaggle genre join) |
 | AN-8 | Pipeline idempotent + re-runnable; logs coverage/k/silhouette/R²/RMSE. | T30, T38 | ◻ |
-| AN-9 † | Analytics UI on real model data; no hardcoded constants. *(reads metrics/clusters + on-read values)* | T45 | ◻ |
+| AN-9 † | Analytics UI on real model data; no hardcoded constants. *(reads metrics/clusters + on-read values)* | T45 | ◧ (T45: analytics page reads real `ModelMetrics`/`Cluster` with **no** hardcoded numbers; the K-means/community half is live, and the popularity half fills in automatically when **T36** writes `ModelMetrics("popularity_regression")`) |
 
 ## Layer 5 — Frontend / UX-UI (UI)
 | ID | Acceptance | Ticket(s) | Status |
@@ -60,8 +60,8 @@ The catalog of requirement IDs (`AUTH-*`, `BE-*`, …) and the **requirement →
 | UI-4 | Comments become real input + list. | T42, T81, T95 | ✅ (T81 follow-up hardens expanded/loading/error states. T95 renders each card's newest comments inline, Instagram-style; no API endpoint change.) |
 | UI-5 | Follow/unfollow buttons + follower counts/lists + searchable profiles, including artist profile content. | T43, T46, T54, T16, T80, T82 | ✅ (T80/T82 are UI hardening follow-ups for profile actions and responsive layout.) |
 | UI-6 | Profile renders stats + cluster + compatibility; link-Spotify prompt. | T44, T14, T82 | ◧ (T44: live listening **stats** + link-Spotify prompt done; **cluster + compatibility** deferred to T14, blocked on analytics. T82 hardens responsive listening layouts.) |
-| UI-7 | Analytics page renders real metrics/clusters; remove `CLUSTER_POINTS`. | T45 | ◻ |
-| UI-8 | Predict folded into Analytics; delete fabricated page/route. | T45 | ◻ |
+| UI-7 | Analytics page renders real metrics/clusters; remove `CLUSTER_POINTS`. | T45 | ◧ (T45: `/analytics` page reads real `ModelMetrics`/`Cluster`, no hardcoded constants — `CLUSTER_POINTS` was in the React SPA, already gone in T60. Clustering half live; popularity metrics fill in at T36.) |
+| UI-8 | Predict folded into Analytics; delete fabricated page/route. | T45 | ◧ (the fabricated `PredictPage`/`/predict` route was removed with the SPA in T60; the client-side popularity-predict widget is deferred until T36 exports the regression coefficients — the analytics page already surfaces the popularity model's quality once T36 lands.) |
 | UI-9 | Loading/empty/error states; no silent mock fallback. | T41, T44, T60, T80, T81, T83, T84, T85, T86 | ✅ (the live Jinja pages render real empty/error states — feed, profile — and the mock-fallback SPA was deleted in T60. T80/T81/T83 are polish follow-ups for visible failure, loading, and empty-state quality. T84 keeps optional profile enrichments from turning `/u/{handle}` into a 500. T85 prevents stale static assets from hiding those shipped UI states. T86 restores the edit form's collapsed initial state.) |
 | UI-10 | "Now playing" indicator on profile + feed. | T20, T44, T82 | ◧ (T44: own-profile badge done via me-scoped T20; **feed** badge + **other users'** now-playing need a new per-user endpoint — follow-up. T82 hardens the existing profile layout.) |
 | UI-11 | Editable profile: user bio + profile-picture upload. | T048, T83, T85, T86 | ✅ (T83 polishes the edit-profile controls, T85 ensures browsers load that design, and T86 keeps the form hidden until Edit profile is activated. No API behavior change.) |
