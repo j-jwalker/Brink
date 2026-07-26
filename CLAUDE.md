@@ -246,7 +246,10 @@ agents, not a changelog.
   are **complete**, as is the 2026-07-22 non-analytics UI hardening wave (`T80`–`T86`) and the
   social quick-wins wave (`T94`–`T97`). For analytics, `T32` is **complete**; `T33` is unblocked
   but first needs `Track`'s schema extended with 5 more features — see its ticket; `T14` is still
-  gated.
+  gated. **`T45` (analytics UI) is done**: `/analytics` reads the real gold `ModelMetrics`/`Cluster`
+  (no hardcoded numbers), shows the K-means/community half live, and auto-fills the popularity half
+  the moment `T36` writes `ModelMetrics("popularity_regression")` — no code change (the client-side
+  predict widget is the one deferred piece, pending `T36`'s exported coefficients).
 
 ## Watch-outs
 

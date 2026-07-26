@@ -1,0 +1,73 @@
+{#
+  WHAT THIS FILE IS
+  The analytics page (T45): Brink's real model output — the taste communities and how well the
+  models did — read from the gold ModelMetrics/Cluster tables, with NO hardcoded numbers. Two
+  sections: the K-means taste communities (live once the clustering model has run, T34), and the
+  popularity model quality (fills in automatically the moment T36 trains it). Each section shows a
+  friendly "not ready yet" state until its model exists, so the page is honest and never blank.
+#}
+{% extends "base.html" %}
+
+{% block content %}
+<section class="stack">
+  <div>
+    <h1 class="section-title">Analytics</h1>
+    <p class="hero-sub">How Brink reads the music, straight from the models, no made-up numbers 🎶</p>
+  </div>
+
+  {# ---- Taste communities (K-means, T34) ---- #}
+  <div class="card">
+    <p class="card-label">Taste communities</p>
+    {% if a.kmeans %}
+      <p class="stat-row">
+        <span class="stat"><b>{{ a.kmeans.k }}</b> communities</span>
+        {% if a.kmeans.silhouette is not none %}
+        <span class="stat"><b>{{ '%.3f' | format(a.kmeans.silhouette) }}</b> silhouette</span>
+        {% endif %}
+      </p>
+      {% if a.clusters %}
+      <ul class="cluster-list">
+        {% for c in a.clusters %}
+        <li class="cluster">
+          <span class="cluster-label">{{ c.label }}</span>
+          <span class="cluster-size">{{ c.size }} {{ 'listener' if c.size == 1 else 'listeners' }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    {% else %}
+      <p class="analytics-pending">
+        Taste communities aren't ready yet. They appear here once the clustering model has run.
+      </p>
+    {% endif %}
+  </div>
+
+  {# ---- Popularity model (T36) — this section fills in automatically when the model is trained ---- #}
+  <div class="card">
+    <p class="card-label">Popularity model</p>
+    {% if a.popularity %}
+      <p class="stat-row">
+        {% if a.popularity.r2 is not none %}
+        <span class="stat"><b>{{ '%.3f' | format(a.popularity.r2) }}</b> R²</span>
+        {% endif %}
+        {% if a.popularity.rmse is not none %}
+        <span class="stat"><b>{{ '%.2f' | format(a.popularity.rmse) }}</b> RMSE</span>
+        {% endif %}
+      </p>
+      {% if a.popularity.feature_importances is mapping and a.popularity.feature_importances %}
+      <p class="card-label">What drives popularity</p>
+      <ul class="importance-list">
+        {% for name, weight in a.popularity.feature_importances.items() %}
+        <li class="importance"><span>{{ name }}</span><span>{{ '%.3f' | format(weight) }}</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    {% else %}
+      <p class="analytics-pending">
+        Popularity insights are coming once the popularity model is trained. This section fills in
+        on its own the moment it does. 🔮
+      </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

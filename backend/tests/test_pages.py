@@ -1134,3 +1134,30 @@ def test_feed_renders_liked_by_line(client, db_session, monkeypatch):
     assert "and 1 other" in body        # 2 total reactions -> "and 1 other"
     assert "toggleReactors(this)" in body   # the line opens the reactors list
     assert "/static/liked-by.js" in body    # the script is loaded
+
+
+# ---- T45: analytics page ----
+
+
+def test_analytics_requires_login(client, db_session):
+    app.dependency_overrides[get_session] = lambda: db_session
+    res = client.get("/analytics", follow_redirects=False)
+    assert res.status_code == 303
+    assert res.headers["location"] == "/auth/login"
+
+
+def test_analytics_page_renders_with_pending_states(client, db_session, monkeypatch):
+    # No gold ModelMetrics/Cluster tables exist in the SQLite test DB, so _analytics_data
+    # fail-safes to empty and both sections show their friendly "not ready yet" state — which
+    # is exactly the pre-T34/T36 experience we want to verify renders (never a crash).
+    _seed_viewer(db_session)
+    app.dependency_overrides[get_session] = lambda: db_session
+    _login(client, monkeypatch)
+
+    res = client.get("/analytics")
+    assert res.status_code == 200
+    body = res.text
+    assert "Taste communities" in body           # section is present
+    assert "Popularity model" in body            # section is present
+    assert "aren't ready yet" in body            # clustering pending state
+    assert "once the popularity model is trained" in body  # popularity pending state (fills in at T36)
