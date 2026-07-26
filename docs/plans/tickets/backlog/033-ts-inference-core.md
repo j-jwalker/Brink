@@ -43,6 +43,15 @@ The draft's T33 was a **Python** `features.py` writing a `TasteVector` table. Un
 - `Track.kaggleMatched` + audio-feature columns exist; `Play`/`Post` link users to tracks.
 - No `backend/app/inference/*` yet.
 
+**⚠ New prerequisite surfaced by T34:** the trained `ModelArtifact("kmeans")`'s `featureOrder` has
+**10** features, not 5 — `danceability, energy, valence, tempo, loudness, acousticness,
+instrumentalness, liveness, speechiness, mode`. `silver.Track` only has columns for the original 5
+(from T31's join). Before this ticket can build a real user's taste vector in the same feature
+space the model was trained on, `Track`'s schema (and `analytics/ingest_kaggle.py`'s join) need
+extending with the other 5 — a small Alembic migration + a join update, not built as part of T34
+(out of its scope). Do this first, or the standardize/nearest-centroid step has no way to compute a
+comparable vector for a real track.
+
 ## Files to Create/Modify
 | File | Action | Purpose |
 |------|--------|---------|

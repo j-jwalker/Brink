@@ -30,7 +30,9 @@ from app.models import (
     ArtistComment,
     ArtistPost,
     ArtistReaction,
+    Cluster,
     Follow,
+    ModelMetrics,
     Post,
     ReactionType,
     Track,
@@ -498,6 +500,57 @@ def artist_page(request: Request, session: Session = Depends(get_session)):
         "artist.html",
         {"page_title": "Artist · Brink", "is_artist": user.is_artist, "posts": posts,
          "viewer": user},
+    )
+    for key, value in refreshed.raw_headers:
+        if key == b"set-cookie":
+            page.raw_headers.append((key, value))
+    return page
+
+
+# Read the analytics the app already computed: the K-means clustering quality + the taste
+# communities (T34), and the popularity-model quality once it's trained (T36). All reads are
+# wrapped so that if the analytics tables aren't there yet (e.g. local dev without the gold
+# schema) or a model hasn't run, the page shows a friendly "not ready yet" instead of crashing.
+# WHY read by model name: T36 writes ModelMetrics("popularity_regression") into the SAME store,
+# so its numbers appear here automatically the moment it lands — no code change (T45).
+def _analytics_data(session: Session) -> dict:
+    data = {"kmeans": None, "clusters": [], "popularity": None}
+    try:
+        km = session.get(ModelMetrics, "kmeans")
+        if km is not None:
+            data["kmeans"] = {"silhouette": km.silhouette, "k": km.k}
+        # The taste communities themselves (largest first), each with its size.
+        data["clusters"] = [
+            {"label": c.label, "size": c.size}
+            for c in session.exec(select(Cluster).order_by(Cluster.size.desc())).all()
+        ]
+        # Popularity model quality — present only after T36 trains it.
+        pop = session.get(ModelMetrics, "popularity_regression")
+        if pop is not None:
+            data["popularity"] = {
+                "r2": pop.r2,
+                "rmse": pop.rmse,
+                "feature_importances": pop.feature_importances or {},
+            }
+    except Exception as e:  # noqa: BLE001 — no analytics store yet -> show the "not ready" state
+        logger.warning("analytics read failed (model store unavailable): %s", e)
+    return data
+
+
+# The analytics page (T45): shows Brink's real model output — the taste communities and model
+# quality — reading the gold ModelMetrics/Cluster tables (no hardcoded numbers). Login-gated.
+@router.get("/analytics", response_class=HTMLResponse)
+def analytics_page(request: Request, session: Session = Depends(get_session)):
+    refreshed = Response()
+    try:
+        require_user(request, session=session, response=refreshed)
+    except AuthError:
+        return RedirectResponse("/auth/login", status_code=303)
+
+    page = templates.TemplateResponse(
+        request,
+        "analytics.html",
+        {"page_title": "Analytics · Brink", "a": _analytics_data(session)},
     )
     for key, value in refreshed.raw_headers:
         if key == b"set-cookie":

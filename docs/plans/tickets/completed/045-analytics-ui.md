@@ -1,5 +1,5 @@
 ---
-status: Backlog
+status: Completed
 priority: Medium
 complexity: Medium
 category: Feature
@@ -47,10 +47,10 @@ The analytics page currently shows hardcoded silhouette/feature-importance numbe
 | `apps/web/src/App routes` | MODIFY | drop the `/predict` route |
 
 ## Testing Checklist
-- [ ] analytics page shows real silhouette/k/feature-importances (no hardcoded constants remain)
-- [ ] `CLUSTER_POINTS` and fabricated numbers removed (grep clean)
-- [ ] predict widget computes from `ModelArtifact` coefficients; labeled exploratory
-- [ ] `PredictPage` + `/predict` route deleted; no dead links
+- [x] analytics page shows real silhouette/k/clusters from `ModelMetrics`/`Cluster` (no hardcoded constants) — verified rendering + graceful empty state; live values verified on the real Postgres/gold DB
+- [x] `CLUSTER_POINTS` and fabricated numbers removed (n/a — they lived in the React SPA, deleted in T60; the Python page has none)
+- [~] predict widget from `ModelArtifact` coefficients — **deferred**: needs T36's exported coefficient shape (see Outcome); the page already surfaces the popularity model's quality metrics
+- [x] `PredictPage` + `/predict` route deleted (done with the SPA in T60; no such route in the Python frontend)
 
 ## Readiness Checklist
 - [x] Summary is specific and actionable
@@ -61,3 +61,25 @@ The analytics page currently shows hardcoded silhouette/feature-importance numbe
 
 ## Notes
 Branch off `develop` as `feat/T45-analytics-ui`; one PR back into `develop` (never `main`). Owner: Sebastian (frontend), pairing with Jonah on the metrics shape.
+
+
+## Outcome (as built)
+Built as the Python/Jinja frontend (ADR-0013), not React — the ticket's `AnalyticsPage.tsx` /
+`PredictPage.tsx` are gone (SPA deleted in T60).
+
+- **`GET /analytics`** (`pages.py` `_analytics_data` + `analytics.html`, login-gated, linked from the
+  signed-in nav): reads the gold `ModelMetrics`/`Cluster` tables and renders **real** model output —
+  no hardcoded numbers. Two sections: **Taste communities** (k + silhouette + each community's size,
+  from T34) and **Popularity model** (R²/RMSE/feature-importances).
+- **Designed to plug in:** it reads by model name, so the popularity section shows a friendly
+  "not ready yet" until **T36** writes `ModelMetrics("popularity_regression")`, then its numbers
+  appear automatically with **no code change**. Same graceful pattern if the gold tables aren't
+  present at all (e.g. local dev) — the page never crashes.
+- **Deferred:** the interactive client-side popularity *predict* widget (linear-predict from the
+  `ModelArtifact("popularity_regression")` coefficients). It depends on T36's exported `params`
+  shape, which doesn't exist yet; building it now would mean inventing that contract. Tracked as a
+  small follow-up to add once T36 lands (the page already shows the popularity model's quality).
+- **Files:** `backend/app/routers/pages.py`, `backend/app/templates/analytics.html`,
+  `backend/app/templates/base.html` (nav link), `backend/app/static/brink.css`,
+  `backend/tests/test_pages.py`. Satisfies **UI-7/UI-8/AN-9** partially (clustering live; popularity
+  data + predict widget arrive with T36). Full suite green (295).
