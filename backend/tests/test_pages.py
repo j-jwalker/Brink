@@ -60,7 +60,7 @@ def test_edit_profile_script_syncs_expanded_state(client):
 def test_home_page_uses_versioned_stylesheet(client):
     app.dependency_overrides[get_session] = lambda: MagicMock()
     body = client.get("/").text
-    assert 'href="/static/brink.css?v=85"' in body
+    assert 'href="/static/brink.css?v=86"' in body
 
 
 # After that one-time cache bust, every static response asks the browser to revalidate before

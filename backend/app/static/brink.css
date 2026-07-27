@@ -372,12 +372,30 @@ textarea.composer-caption { resize: vertical; min-height: 2.75rem; }
 .artist-status { margin: 0; color: var(--mute); font-size: 0.8rem; min-height: 1rem; }
 .artist-post { display: grid; gap: 0.5rem; }
 .artist-post-img { width: 100%; border-radius: 0.75rem; display: block; }
-/* T103: placeholder shown when an artist image can't be signed (blank URL) — a muted box so the
-   card stays intact instead of showing a broken <img> or crashing the page. */
+/* T103: placeholder shown when an artist image can't be signed (blank URL) — instead of a broken
+   <img> or a crash, we show a last-resort MUSIC graphic so the card still looks intentional and
+   on-brand. It's a vinyl record centered on a soft lavender→pink brand wash (the SVG is inlined as a
+   data: URI so there's no extra network request — which matters, since we're here precisely because
+   the network couldn't fetch the real image). The "%23" bits are just URL-encoded "#" for the hex
+   colours; the vinyl is drawn as nested circles (grooves) with a lavender centre label. */
 .artist-post-img-missing {
   aspect-ratio: 16 / 9;
-  background: var(--ink);
-  border: 1px dashed var(--line);
+  display: flex;
+  align-items: flex-end;      /* the caption sits along the bottom edge */
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='34' fill='%230b0b12' stroke='%2326263a'/%3E%3Ccircle cx='50' cy='50' r='27' fill='none' stroke='%232c2c46' stroke-width='0.7'/%3E%3Ccircle cx='50' cy='50' r='21' fill='none' stroke='%232c2c46' stroke-width='0.7'/%3E%3Ccircle cx='50' cy='50' r='15' fill='none' stroke='%232c2c46' stroke-width='0.7'/%3E%3Ccircle cx='50' cy='50' r='10' fill='%239d8df1'/%3E%3Ccircle cx='50' cy='50' r='2' fill='%230b0b12'/%3E%3C/svg%3E")
+      center 34% / auto 60% no-repeat,
+    radial-gradient(120% 95% at 50% 25%, rgba(157, 141, 241, 0.20), rgba(244, 114, 182, 0.10) 55%, var(--ink) 100%);
+}
+/* a small, honest caption under the vinyl so the fallback reads as deliberate, not as an error. */
+.artist-post-img-missing::after {
+  content: "🎵 artwork tuning in";
+  margin-bottom: 0.7rem;
+  font-size: 0.8rem;
+  color: var(--mute);
 }
 .artist-post-caption { margin: 0; font-size: 0.95rem; }
 /* T104: a text-only artist post (no photo) gets the same distinct "note" look as user notes —
