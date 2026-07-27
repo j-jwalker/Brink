@@ -1157,12 +1157,48 @@ def test_analytics_page_renders_with_pending_states(client, db_session, monkeypa
     res = client.get("/analytics")
     assert res.status_code == 200
     body = res.text
-    assert "Taste communities" in body           # section is present
-    assert "Popularity model" in body            # section is present
-    assert "aren't ready yet" in body            # clustering pending state
+    assert "Taste communities" in body                     # clustering section present (pending state)
+    assert "What makes a song popular?" in body            # popularity section present
+    assert "aren't ready yet" in body                      # clustering pending state
     assert "once the popularity model is trained" in body  # popularity pending state (fills in at T36)
     # Regression guard: a signed-in visitor must get the signed-in nav, not the logged-out
     # header. The route originally forgot to pass `viewer`, so the nav fell back to
     # Features/How it works/Sign in even though the analytics content rendered.
     assert 'href="/auth/logout"' in body         # "Log out" -> signed-in nav is present
     assert "Log in with Spotify" not in body     # logged-out header must NOT show here
+
+
+def test_analytics_page_renders_rich_visuals(client, db_session, monkeypatch):
+    # Exercise the POPULATED branch (communities + audio-DNA + popularity) without needing the
+    # gold tables (which SQLite can't build) by faking _analytics_data's output. This catches
+    # template bugs in the rich path that the pending-state test can't reach.
+    _seed_viewer(db_session)
+    fake = {
+        "kmeans": {"silhouette": 0.16, "k": 2, "silhouette_pct": 16,
+                   "silhouette_reading": "the tribes share a lot of taste"},
+        "total_listeners": 1500,
+        "total_listeners_display": "1,500",
+        "communities": [
+            {"rank": 1, "label": "High Valence, High Danceability", "size": 1000,
+             "size_display": "1,000", "share_pct": 66.7, "bar_pct": 100, "color": "#9d8df1",
+             "features": [{"name": "danceability", "pct": 75}, {"name": "energy", "pct": 60}]},
+            {"rank": 2, "label": "Low Energy", "size": 500, "size_display": "500",
+             "share_pct": 33.3, "bar_pct": 50, "color": "#f472b6", "features": []},
+        ],
+        "popularity": {"r2": 0.42, "rmse": 12.3,
+                       "feature_importances": {"energy": 0.5, "danceability": 0.3}},
+    }
+    monkeypatch.setattr("app.routers.pages._analytics_data", lambda session: fake)
+    app.dependency_overrides[get_session] = lambda: db_session
+    _login(client, monkeypatch)
+
+    res = client.get("/analytics")
+    assert res.status_code == 200
+    body = res.text
+    assert "2 music tribes" in body                          # hero uses real k
+    assert "1,500" in body                                   # total listeners
+    assert "High Valence, High Danceability" in body         # community label
+    assert "Danceability" in body                            # audio-DNA feature label (capitalized)
+    assert "the tribes share a lot of taste" in body         # silhouette reading
+    assert "0.420" in body                                   # popularity R² rendered (loop path exercised)
+    assert 'href="/auth/logout"' in body                     # signed-in nav
