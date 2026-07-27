@@ -513,18 +513,76 @@ def artist_page(request: Request, session: Session = Depends(get_session)):
 # schema) or a model hasn't run, the page shows a friendly "not ready yet" instead of crashing.
 # WHY read by model name: T36 writes ModelMetrics("popularity_regression") into the SAME store,
 # so its numbers appear here automatically the moment it lands — no code change (T45).
+# The 0-1 Spotify audio features shown as a community's "audio DNA" bars — the recognizable ones.
+# (tempo/loudness/mode are on different scales, so they're left out of the 0-100% bar visual.)
+_DNA_FEATURES = [
+    "danceability", "energy", "valence", "acousticness",
+    "instrumentalness", "liveness", "speechiness",
+]
+
+# A vibrant, distinct colour per community (cycled if there are ever more communities than colours).
+_COMMUNITY_COLORS = [
+    "#9d8df1", "#f472b6", "#5eead4", "#fbbf24",
+    "#60a5fa", "#34d399", "#fb923c", "#c084fc",
+]
+
+
+# Turn a silhouette score into a plain-English "how distinct are the communities" reading. The score
+# runs ~0 (heavy overlap) to 1 (cleanly separated); Brink's k was forced to 7 so some overlap is
+# expected — we say that honestly rather than dress it up.
+def _silhouette_reading(score) -> tuple[int, str]:
+    if score is None:
+        return (0, "not measured yet")
+    pct = max(0, min(100, round(score * 100)))
+    if score < 0.25:
+        return (pct, "the tribes share a lot of taste — the lines between them are soft")
+    if score < 0.5:
+        return (pct, "the tribes are moderately distinct")
+    return (pct, "the tribes are sharply separated")
+
+
 def _analytics_data(session: Session) -> dict:
-    data = {"kmeans": None, "clusters": [], "popularity": None}
+    # Shape everything the analytics page's visuals need, from the REAL gold tables. All reads are
+    # wrapped so a missing model store (e.g. local dev) shows the friendly "not ready" states.
+    data = {"kmeans": None, "communities": [], "total_listeners": 0, "popularity": None}
     try:
         km = session.get(ModelMetrics, "kmeans")
         if km is not None:
-            data["kmeans"] = {"silhouette": km.silhouette, "k": km.k}
-        # The taste communities themselves (largest first), each with its size.
-        data["clusters"] = [
-            {"label": c.label, "size": c.size}
-            for c in session.exec(select(Cluster).order_by(Cluster.size.desc())).all()
-        ]
-        # Popularity model quality — present only after T36 trains it.
+            pct, reading = _silhouette_reading(km.silhouette)
+            data["kmeans"] = {
+                "silhouette": km.silhouette,
+                "k": km.k,
+                "silhouette_pct": pct,
+                "silhouette_reading": reading,
+            }
+
+        # Communities largest-first. We compute each one's share of all listeners (for the % label)
+        # and a bar width relative to the BIGGEST community (so the leaderboard's top bar is full).
+        clusters = list(session.exec(select(Cluster).order_by(Cluster.size.desc())).all())
+        total = sum(c.size for c in clusters)
+        biggest = clusters[0].size if clusters else 0
+        data["total_listeners"] = total
+        data["total_listeners_display"] = f"{total:,}"  # e.g. "1,203,025" for the hero
+        for rank, c in enumerate(clusters):
+            centroid = c.centroid if isinstance(c.centroid, dict) else {}
+            # Each community's "audio DNA": the 0-1 features from its real centroid, as 0-100% bars.
+            features = [
+                {"name": f, "pct": max(0, min(100, round(float(centroid[f]) * 100)))}
+                for f in _DNA_FEATURES
+                if centroid.get(f) is not None
+            ]
+            data["communities"].append({
+                "rank": rank + 1,
+                "label": c.label,
+                "size": c.size,
+                "size_display": f"{c.size:,}",
+                "share_pct": round(c.size / total * 100, 1) if total else 0,
+                "bar_pct": round(c.size / biggest * 100) if biggest else 0,
+                "color": _COMMUNITY_COLORS[rank % len(_COMMUNITY_COLORS)],
+                "features": features,
+            })
+
+        # Popularity model quality — present only after T36 trains it (fills in automatically).
         pop = session.get(ModelMetrics, "popularity_regression")
         if pop is not None:
             data["popularity"] = {

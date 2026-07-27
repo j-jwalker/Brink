@@ -90,3 +90,15 @@ authenticated the user (the analytics content rendered) but forgot to pass `view
 template, so `base.html` fell back to its public header (Features / How it works / Sign in).
 Fixed by passing `viewer=require_user(...)` to the template; added a regression test asserting the
 signed-in nav (`/auth/logout` link present, no "Log in with Spotify") on the analytics page.
+
+## Visual redesign (Wrapped-style, follow-up)
+Reworked `/analytics` from plain lists into a Gen-Z, "music universe" layout — still 100% real
+model data, no hardcoded numbers. Five visuals: (1) a hero stat (tribe count + total listeners),
+(2) a "how distinct are the tribes" meter from the silhouette with a plain-English reading,
+(3) a ranked tribe leaderboard (animated bar per community by listener count + % share),
+(4) each tribe's **audio DNA** — mini-bars for the 7 recognizable 0-1 audio features pulled from
+its real `Cluster.centroid`, and (5) "what makes a song popular" (auto-fills when T36 lands).
+Bars grow-in on load (respecting `prefers-reduced-motion`); communities are colour-coded; a
+"which tribe are you?" teaser sets up the per-listener matching that arrives with T33. Added a
+populated-render test (feeds the template realistic data) so the rich path is covered even though
+the gold tables aren't in the SQLite test DB.
