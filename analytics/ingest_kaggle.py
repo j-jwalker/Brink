@@ -7,14 +7,17 @@
 #     for those matches is preserved even if our join logic changes later.
 #     Each run replaces the table's contents (delete-then-insert), so
 #     re-running never piles up duplicate raw rows.
-#   - silver.Track — for each match (spotifyId == the CSV's id column), fill
-#     in danceability/energy/valence/tempo/loudness + set kaggleMatched=True.
-#     A Track with no Kaggle match is left alone (kaggleMatched keeps its
-#     default False) — the fallback for those is a separate ticket (T33), not
-#     this file's job. NOTE: this dataset has no popularity column, so the
-#     join never touches Track.popularity — that value already comes from
-#     live Spotify data captured when a track is posted/snapshotted
-#     (backend/app/tracks.py), not from Kaggle.
+#   - silver.Track — for each match (spotifyId == the CSV's id column), fill in
+#     all 10 kmeans audio features (danceability/energy/valence/tempo/loudness
+#     from T31, plus acousticness/instrumentalness/liveness/speechiness/mode
+#     added in T33 to match T34's trained feature space) + set
+#     kaggleMatched=True. A Track with no Kaggle match is left alone
+#     (kaggleMatched keeps its default False) — the fallback for those is
+#     built on read by T33's inference module, not this file's job. NOTE: this
+#     dataset has no popularity column, so the join never touches
+#     Track.popularity — that value already comes from live Spotify data
+#     captured when a track is posted/snapshotted (backend/app/tracks.py), not
+#     from Kaggle.
 #
 # WHY bronze only keeps the matched rows, not every Kaggle row: the Kaggle
 # file has ~1.2M songs, but only a tiny fraction will ever match something a
@@ -84,7 +87,9 @@ def _apply_matches(engine: Engine, matched_rows: dict[str, dict[str, str]]) -> N
             text(
                 'UPDATE silver."Track" SET '
                 "danceability = :danceability, energy = :energy, valence = :valence, "
-                'tempo = :tempo, loudness = :loudness, '
+                "tempo = :tempo, loudness = :loudness, "
+                "acousticness = :acousticness, instrumentalness = :instrumentalness, "
+                "liveness = :liveness, speechiness = :speechiness, mode = :mode, "
                 '"kaggleMatched" = true '
                 'WHERE "spotifyId" = :id'
             ),
@@ -96,6 +101,14 @@ def _apply_matches(engine: Engine, matched_rows: dict[str, dict[str, str]]) -> N
                     "valence": float(row["valence"]),
                     "tempo": float(row["tempo"]),
                     "loudness": float(row["loudness"]),
+                    # T33: the remaining 5 kmeans features (T34's FEATURE_ORDER), joined
+                    # the same way as the original 5 so a real user's vector is
+                    # comparable to what the model was trained on.
+                    "acousticness": float(row["acousticness"]),
+                    "instrumentalness": float(row["instrumentalness"]),
+                    "liveness": float(row["liveness"]),
+                    "speechiness": float(row["speechiness"]),
+                    "mode": float(row["mode"]),
                 }
                 for track_id, row in matched_rows.items()
             ],

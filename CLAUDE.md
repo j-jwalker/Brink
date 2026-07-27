@@ -240,16 +240,25 @@ agents, not a changelog.
   `T34`'s 7 trained clusters (scoped down from ADR-0004 C3's ~100–200 — disclosed on the ticket,
   not an ADR change), each with its own shared pool of 25 new Kaggle-sourced `Track` rows and
   15–25 `Play` rows spread across 8–15 days; every seeded user's `bio` discloses it as synthetic
-  demo data. On-demand inference `T33` is next; `T14` remains gated on `T33`/`T35`.
+  demo data. `T33` built on-demand inference: `silver.Track` was widened with the 5 remaining
+  kmeans features (migration `ce6e2ca7edac`, additive, applied to `brink-dev`) and
+  `ingest_kaggle.py`'s join + a full re-ingest backfilled them (269 matched tracks, 257 with all 10
+  features present). `backend/app/inference/taste_vector.py` + `assign.py` build a user's taste
+  vector on read and assign their nearest `gold.Cluster`, standardizing with the trained
+  `ModelArtifact("kmeans")`'s scaler — the C4 fallback for an unmatched/incomplete track is the
+  training corpus's own mean vector, not literally "genre" (disclosed; neither Kaggle file has a
+  genre field, same gap `T32` hit). Degrades to a null cluster, never a 500, when the model or gold
+  schema isn't available. `T14` (the profile endpoint that surfaces this) and `T35` (compatibility)
+  are next, both now unblocked.
 - **Next feature work:** start from `docs/plans/tickets/README.md` before choosing a ticket. The
   Wave 2 music-identity trio (`T100`–`T102`), `T103` signing hardening, and `T104` text-only posts
   are **complete**, as is the 2026-07-22 non-analytics UI hardening wave (`T80`–`T86`) and the
-  social quick-wins wave (`T94`–`T97`). For analytics, `T32` is **complete**; `T33` is unblocked
-  but first needs `Track`'s schema extended with 5 more features — see its ticket; `T14` is still
-  gated. **`T45` (analytics UI) is done**: `/analytics` reads the real gold `ModelMetrics`/`Cluster`
-  (no hardcoded numbers), shows the K-means/community half live, and auto-fills the popularity half
-  the moment `T36` writes `ModelMetrics("popularity_regression")` — no code change (the client-side
-  predict widget is the one deferred piece, pending `T36`'s exported coefficients).
+  social quick-wins wave (`T94`–`T97`). For analytics, `T32` and `T33` are **complete**; `T14` and
+  `T35` are unblocked next. **`T45` (analytics UI) is done**: `/analytics` reads the real gold
+  `ModelMetrics`/`Cluster` (no hardcoded numbers), shows the K-means/community half live, and
+  auto-fills the popularity half the moment `T36` writes `ModelMetrics("popularity_regression")` —
+  no code change (the client-side predict widget is the one deferred piece, pending `T36`'s
+  exported coefficients).
 
 ## Watch-outs
 
@@ -272,9 +281,6 @@ agents, not a changelog.
   (`backend/alembic/env.py`); it is harmless and can be dropped later.
 - Render deploys production from `main`, not `develop`. Scheduled GitHub workflows also only run
   from the default branch, so release PRs and back-merges matter.
-- `T34`'s trained `ModelArtifact("kmeans")` uses 10 audio features, but `silver.Track` only has
-  columns for the original 5 (from `T31`). `T33` needs `Track`'s schema + `ingest_kaggle.py`'s join
-  extended with the other 5 before real-user inference can work — see `T33`'s ticket.
 
 ## Deployment topology (ADR-0010, T07, ADR-0013, T60)
 

@@ -215,6 +215,23 @@ class Track(SQLModel, table=True):
     loudness: Optional[float] = Field(
         default=None, sa_column=Column("loudness", Float, nullable=True)
     )
+    # T33 prerequisite: the trained K-means model (T34) was fit on 10 audio features,
+    # not just the 5 above from T31's original join. These 5 fill out the rest so a
+    # real user's taste vector can be compared in the same feature space the model
+    # was trained on (see analytics/cluster.py FEATURE_ORDER).
+    acousticness: Optional[float] = Field(
+        default=None, sa_column=Column("acousticness", Float, nullable=True)
+    )
+    instrumentalness: Optional[float] = Field(
+        default=None, sa_column=Column("instrumentalness", Float, nullable=True)
+    )
+    liveness: Optional[float] = Field(
+        default=None, sa_column=Column("liveness", Float, nullable=True)
+    )
+    speechiness: Optional[float] = Field(
+        default=None, sa_column=Column("speechiness", Float, nullable=True)
+    )
+    mode: Optional[float] = Field(default=None, sa_column=Column("mode", Float, nullable=True))
     # kaggle_matched: whether we found this song's audio features in the Kaggle
     # dataset. Defaults to false until the matching job confirms it.
     kaggle_matched: bool = Field(
