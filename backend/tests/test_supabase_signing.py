@@ -26,3 +26,21 @@ def test_or_blank_returns_empty_on_failure(monkeypatch):
 
     monkeypatch.setattr(supabase, "create_signed_read_url", boom)
     assert supabase.create_signed_read_url_or_blank("artist-images", "a/b.png") == ""
+
+
+# A SINGLE transient blip (network hiccup / free-tier cold start) must NOT blank the image: the
+# wrapper retries and succeeds. This is the fix for the "sometimes the image shows, sometimes it
+# doesn't" flicker — before, one failure gave up immediately and fell back to the placeholder.
+def test_or_blank_retries_a_transient_failure(monkeypatch):
+    calls = {"n": 0}
+
+    def flaky(bucket, path, expires_in=3600):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("transient network blip")
+        return f"https://signed/{bucket}/{path}"
+
+    monkeypatch.setattr(supabase, "create_signed_read_url", flaky)
+    assert supabase.create_signed_read_url_or_blank("artist-images", "a/b.png") == \
+        "https://signed/artist-images/a/b.png"
+    assert calls["n"] == 2  # it retried once after the blip, instead of giving up

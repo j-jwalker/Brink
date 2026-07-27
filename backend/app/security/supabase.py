@@ -143,7 +143,8 @@ def create_signed_read_url(bucket: str, path: str, expires_in: int = 3600) -> st
     return f"{get_settings().supabase_url}/storage/v1{signed}"
 
 
-def create_signed_read_url_or_blank(bucket: str, path: str, expires_in: int = 3600) -> str:
+def create_signed_read_url_or_blank(bucket: str, path: str, expires_in: int = 3600,
+                                    attempts: int = 2) -> str:
     # The RESILIENT sibling of create_signed_read_url (T103). WHY it exists: signing hits Supabase
     # Storage over the network and RAISES on any failure — a missing object, a wrong/expired
     # service-role key, or a Storage outage. On 2026-07-22 exactly that (a bad Render key ->
@@ -151,11 +152,21 @@ def create_signed_read_url_or_blank(bucket: str, path: str, expires_in: int = 36
     # let the exception propagate. A single un-signable artist image must never do that. So any
     # display surface that signs an artist image calls THIS: on failure we log it and return "" (an
     # empty URL), and the template renders a muted placeholder instead of a broken <img> or a crash.
-    try:
-        return create_signed_read_url(bucket, path, expires_in)
-    except Exception as e:  # noqa: BLE001 - a storage-signing failure must degrade, never crash a page
-        logger.warning("signed read URL unavailable for %s/%s: %s", bucket, path, e)
-        return ""
+    #
+    # RETRY (fixes the "images show sometimes, not others" flicker): a SINGLE transient hiccup — a
+    # network blip, or the free-tier server waking from sleep — used to blank an image for that whole
+    # page load, because we gave up after one try. Now we retry the sign a couple of times before
+    # degrading, so only a *persistent* failure falls back to the placeholder. The signing call is
+    # fast and there are only a handful of artist images per page, so the extra attempt is cheap.
+    last_error: Exception | None = None
+    for _ in range(max(1, attempts)):
+        try:
+            return create_signed_read_url(bucket, path, expires_in)
+        except Exception as e:  # noqa: BLE001 - degrade only after all retries, never crash a page
+            last_error = e
+    logger.warning("signed read URL unavailable for %s/%s after %d attempts: %s",
+                   bucket, path, attempts, last_error)
+    return ""
 
 
 def public_object_url(bucket: str, path: str) -> str:
