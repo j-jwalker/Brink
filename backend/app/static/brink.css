@@ -859,20 +859,66 @@ textarea.composer-caption { resize: vertical; min-height: 2.75rem; }
   font-size: 0.9rem;
 }
 
-/* ---- Analytics page (T45) ---- */
+/* ---- Analytics page (T45): Wrapped-style, real model data ---- */
+.analytics { max-width: 46rem; }
+
+/* Hero */
+.an-hero {
+  border-radius: 1.25rem;
+  padding: 1.75rem 1.5rem;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(157, 141, 241, 0.35), transparent 60%),
+    radial-gradient(120% 140% at 100% 100%, rgba(244, 114, 182, 0.30), transparent 60%),
+    var(--panel);
+  border: 1px solid var(--line);
+}
+.an-hero .pill { margin-bottom: 0.75rem; }
+.an-hero-title { margin: 0; font-size: clamp(1.9rem, 6vw, 2.8rem); font-weight: 800; letter-spacing: -0.02em; text-wrap: balance; }
+.an-hero-sub { margin: 0.6rem 0 0; color: var(--text); opacity: 0.85; font-size: 0.98rem; line-height: 1.55; max-width: 34rem; }
+.an-hero-sub b { color: var(--accent); }
+.an-hero-sub em { font-style: italic; color: var(--hot); }
+
+/* Distinctness meter */
+.meter { height: 0.7rem; border-radius: 9999px; background: var(--ink); border: 1px solid var(--line); overflow: hidden; }
+.meter-fill {
+  display: block; height: 100%; width: var(--fill);
+  background: linear-gradient(90deg, var(--accent), var(--hot));
+  animation: an-grow 0.9s ease-out both;
+}
+.meter-caption { margin: 0.55rem 0 0; font-size: 0.9rem; color: var(--text); }
+.muted { color: var(--mute); }
+
+/* Tribe cards + leaderboard bar */
+.tribe { border-left: 4px solid var(--tribe); }
+.tribe-head { display: flex; align-items: baseline; gap: 0.75rem; }
+.tribe-rank { font-size: 1.4rem; font-weight: 800; color: var(--tribe); font-variant-numeric: tabular-nums; }
+.tribe-title { display: flex; flex-direction: column; min-width: 0; }
+.tribe-name { font-weight: 700; font-size: 1.05rem; }
+.tribe-meta { color: var(--mute); font-size: 0.82rem; margin-top: 0.1rem; }
+.bar { height: 0.6rem; border-radius: 9999px; background: var(--ink); border: 1px solid var(--line); overflow: hidden; margin: 0.7rem 0 0; }
+.bar-fill { display: block; height: 100%; width: var(--fill); border-radius: 9999px; animation: an-grow 0.9s ease-out both; }
+
+/* Audio DNA mini-bars */
+.dna-title { margin: 1rem 0 0.5rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mute); }
+.dna { display: grid; gap: 0.4rem; }
+.dna-row { display: grid; grid-template-columns: 7.5rem 1fr 2rem; align-items: center; gap: 0.6rem; }
+.dna-label { font-size: 0.8rem; color: var(--mute); }
+.dna-bar { height: 0.5rem; border-radius: 9999px; background: var(--ink); border: 1px solid var(--line); overflow: hidden; }
+.dna-fill { display: block; height: 100%; width: var(--fill); border-radius: 9999px; opacity: 0.9; animation: an-grow 0.9s ease-out both; }
+.dna-val { font-size: 0.78rem; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .dna-row { grid-template-columns: 6rem 1fr 1.8rem; } }
+
+/* "Which tribe are you" teaser */
+.an-teaser { border: 1px dashed var(--line); background: transparent; }
+
+/* Popularity + shared bits */
 .stat-row { display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 0 0 0.75rem; }
 .stat { color: var(--mute); font-size: 0.9rem; }
 .stat b { color: var(--text); font-size: 1.15rem; font-variant-numeric: tabular-nums; margin-right: 0.25rem; }
-.cluster-list, .importance-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
-.cluster, .importance {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.5rem 0.7rem;
-  border: 1px solid var(--line);
-  border-radius: 0.6rem;
-  font-size: 0.9rem;
-}
-.cluster-label { font-weight: 600; }
-.cluster-size, .importance span:last-child { color: var(--mute); font-variant-numeric: tabular-nums; }
 .analytics-pending { margin: 0; color: var(--mute); font-size: 0.92rem; line-height: 1.5; }
+
+/* Bars grow from empty on load; respect reduced-motion. */
+@keyframes an-grow { from { width: 0; } to { width: var(--fill); } }
+@media (prefers-reduced-motion: reduce) {
+  .meter-fill, .bar-fill, .dna-fill { animation: none; }
+}
