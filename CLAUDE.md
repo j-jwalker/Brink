@@ -248,13 +248,19 @@ agents, not a changelog.
   `ModelArtifact("kmeans")`'s scaler — the C4 fallback for an unmatched/incomplete track is the
   training corpus's own mean vector, not literally "genre" (disclosed; neither Kaggle file has a
   genre field, same gap `T32` hit). Degrades to a null cluster, never a 500, when the model or gold
-  schema isn't available. `T14` (the profile endpoint that surfaces this) and `T35` (compatibility)
-  are next, both now unblocked.
+  schema isn't available. `T35` added `backend/app/inference/compatibility.py`: cosine similarity
+  between two users' taste vectors (T33), clamped to 0..1 and rounded to avoid floating-point noise
+  on identical pairs, reusing the same `ModelArtifact` load so both vectors share a feature space —
+  null (never an error) if either side has no taste vector or the model isn't available. At today's
+  ~24% Kaggle-match coverage most real users score near 1.0 (they share T33's corpus-mean fallback
+  for unmatched tracks) — disclosed as a data-sparsity artifact, not a bug. `T14` (the profile
+  endpoint that surfaces both the cluster and the compatibility score) is next, now the only
+  blocker left on the analytics-to-profile spine.
 - **Next feature work:** start from `docs/plans/tickets/README.md` before choosing a ticket. The
   Wave 2 music-identity trio (`T100`–`T102`), `T103` signing hardening, and `T104` text-only posts
   are **complete**, as is the 2026-07-22 non-analytics UI hardening wave (`T80`–`T86`) and the
-  social quick-wins wave (`T94`–`T97`). For analytics, `T32` and `T33` are **complete**; `T14` and
-  `T35` are unblocked next. **`T45` (analytics UI) is done**: `/analytics` reads the real gold
+  social quick-wins wave (`T94`–`T97`). For analytics, `T32`, `T33`, and `T35` are **complete**;
+  `T14` is next, unblocked. **`T45` (analytics UI) is done**: `/analytics` reads the real gold
   `ModelMetrics`/`Cluster` (no hardcoded numbers), shows the K-means/community half live, and
   auto-fills the popularity half the moment `T36` writes `ModelMetrics("popularity_regression")` —
   no code change (the client-side predict widget is the one deferred piece, pending `T36`'s
