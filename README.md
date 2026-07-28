@@ -37,8 +37,27 @@ traced to tickets. (First-load may take ~50s while the free Render instance wake
 
 ## Screenshots
 
-_To add: capture the deployed app into `docs/screenshots/` and embed here — landing, feed, a profile
-with the Taste card, artist studio, and the analytics "music universe" page._
+**Landing** — sign in with Spotify or email; your listening becomes the feed.
+
+![Brink landing page](docs/screenshots/Landing-brink.png)
+
+**Feed** — songs play in place via a Spotify embed, with reactions, comments, and a "Liked by" line.
+
+![Brink feed](docs/screenshots/Feed-brink.png)
+
+**Profile** — a Taste card (your taste community, and "% compatible" on others' profiles) plus a
+listening summary.
+
+![Brink profile with the Taste card](docs/screenshots/Profile-brink.png)
+
+**Artist studio** — behind-the-scenes posts for artist accounts.
+
+![Brink artist studio](docs/screenshots/artist-brink.png)
+
+**Analytics** — a Spotify-Wrapped-style read of the real model output: taste tribes, how distinct
+they are, and each tribe's audio DNA.
+
+![Brink analytics page](docs/screenshots/analytics-brink.png)
 
 ---
 
