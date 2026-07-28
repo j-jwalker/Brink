@@ -24,7 +24,7 @@ The catalog of requirement IDs (`AUTH-*`, `BE-*`, …) and the **requirement →
 | BE-5 | `POST/DELETE /api/posts/:id/reactions` — server-deduped toggle. | T11 | ✅ |
 | BE-6 | `POST/GET /api/posts/:id/comments`. | T12 | ✅ |
 | BE-7 | `POST/DELETE /api/follow/:userId` — feed respects the graph. | T13 | ✅ |
-| BE-8 | `GET /api/users/:id/profile` — stats + cluster + compatibility. | T14 | ◻ |
+| BE-8 | `GET /api/users/:id/profile` — stats + cluster + compatibility. *(served on the `/u/{handle}` page, not a separate JSON route — ADR-0013 makes the page and API one app)* | T44, T14 | ✅ (stats via T44; **cluster + compatibility** surfaced on read by T14, degrading to null when no model is trained) |
 | BE-9 | `POST /api/artist/posts` — create BTS post + optional track. | T50 | ✅ |
 | BE-10 | All mutations: session-gated, validated, consistent error JSON. | every API ticket (ADR-0007) | ◻ |
 | BE-11 | Connection pooling (Supabase pooler) configured. | T01, T05 | ✅ |
@@ -44,10 +44,10 @@ The catalog of requirement IDs (`AUTH-*`, `BE-*`, …) and the **requirement →
 | AN-1 | Ingest Kaggle audio features into a `Track`-joinable form; record coverage. | T31 | ✅ |
 | AN-2 † | Per-user taste vector (standardized) + C4 genre fallback. *(now computed on read, no table)* | T33 | ✅ fallback is a corpus-mean vector, not literally "genre" (disclosed — neither Kaggle file has a genre field; see T33 Outcome) |
 | AN-3 | K-means on Kaggle tracks; k via elbow+silhouette; persist `Cluster` + metrics. | T34 | ✅ k forced to 7 (disclosed — silhouette preferred k=2; see T34 Outcome) |
-| AN-4 † | Assign each user to nearest cluster. *(computed on read in the Python API; `User.clusterId` dropped)* | T33, T14 | ◧ (T33: on-read nearest-`Cluster` assignment is live and tested; surfacing it to a user is T14, still open) |
-| AN-5 † | Compatibility = cosine of full taste vectors. *(computed on read in the Python API; no pairwise table)* | T35, T14 | ◧ (T35: `cosine()`/`compatibility()` live and tested, reusing T33's taste vectors; surfacing it to a user is T14, still open) |
+| AN-4 † | Assign each user to nearest cluster. *(computed on read in the Python API; `User.clusterId` dropped)* | T33, T14 | ✅ (T33 computes the on-read nearest-`Cluster` assignment; **T14 surfaces it** as the "Taste community" label on the profile) |
+| AN-5 † | Compatibility = cosine of full taste vectors. *(computed on read in the Python API; no pairwise table)* | T35, T14 | ✅ (T35 computes `cosine()`/`compatibility()` over T33's taste vectors; **T14 surfaces it** as the "% compatible with your taste" line, shown only vs a different viewer) |
 | AN-6 † | Popularity regression; persist R²/RMSE/feature-importances. | T36 | **Cut** — no dataset supports a defensible popularity regression, and popularity itself isn't a stable regression target (see [ADR-0016](../decisions/adr/0016-cut-second-regression-model.md)); the second/regression model is not being built |
-| AN-7 † | Aggregations: top tracks/genres/artists, streak, 30-day totals. *(computed live in the Python API, no `UserStats` table)* | T44, T14, T102 | ◧ (T44: top **tracks/artists**, streak, 30-day totals done live over `Play` in `app/stats.py`; T102 adds a batched per-(author, track) play count on feed cards over the same `Play` data; top **genres** still deferred to T14, needs the T31 Kaggle genre join) |
+| AN-7 † | Aggregations: top tracks/genres/artists, streak, 30-day totals. *(computed live in the Python API, no `UserStats` table)* | T44, T102 | ◧ (T44: top **tracks/artists**, streak, 30-day totals done live over `Play` in `app/stats.py`; T102 adds a batched per-(author, track) play count on feed cards over the same `Play` data; top **genres cut** — there is no genre field anywhere (no `Track.genre`; neither Kaggle CSV carries one — same gap as AN-2/T32/ADR-0004), so it's not buildable without a new data source. Investigated and dropped in T14) |
 | AN-8 † | Pipeline idempotent + re-runnable; logs coverage/k/silhouette/R²/RMSE. | T30, T38 | ✅ no R²/RMSE — T36 (the regression model) was cut entirely (ADR-0016); `run_pipeline.py` orchestrates ingest + cluster, each independently idempotent, logging coverage/k/silhouette |
 | AN-9 † | Analytics UI on real model data; no hardcoded constants. *(reads metrics/clusters + on-read values)* | T45 | ◧ (T45: analytics page reads real `ModelMetrics`/`Cluster` with **no** hardcoded numbers; the K-means/community half is live, and the popularity half fills in automatically when **T36** writes `ModelMetrics("popularity_regression")`) |
 
