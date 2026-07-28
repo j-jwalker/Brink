@@ -1,5 +1,5 @@
 ---
-status: Backlog
+status: Obsolete
 priority: Medium
 complexity: Medium
 category: Feature
@@ -11,6 +11,18 @@ owner: Jonah
 ---
 
 # Feature: Popularity regression + coefficient export (T36)
+
+> **CUT (2026-07-28) — see [ADR-0016](../../../decisions/adr/0016-cut-second-regression-model.md).**
+> No Kaggle dataset supports a defensible popularity regression: the ~1.2M-track training corpus
+> has no `popularity` column at all, the only file that does is frozen at April 2019, and the real
+> `brink-dev` overlap (Kaggle-matched + live popularity) is 67 rows — too thin for a train/test
+> split. Popularity is also a live, constantly-recomputed metric, not a fixed target the way audio
+> features are. A valence-regression alternative was drafted (trained on the full Kaggle corpus,
+> sidestepping the data problem) but the team chose to cut the second model entirely rather than
+> build either version, given the 2026-07-30 deadline and this ticket's always-optional,
+> exploratory scope (ADR-0004 C5). `Track.popularity` itself is untouched and still used for live
+> display elsewhere in the app (feed/search/posts) — only this analytics *training* target is cut.
+> **T38** drops its dependency on this ticket and no longer orchestrates a regression step.
 
 ## Rationale
 A second real model strengthens the analytics story cheaply: a linear regression of audio features → track popularity, reported with R²/RMSE + feature importances (labeled exploratory per ADR-0004 C5).

@@ -99,6 +99,16 @@ model data, no hardcoded numbers. Five visuals: (1) a hero stat (tribe count + t
 (4) each tribe's **audio DNA** — mini-bars for the 7 recognizable 0-1 audio features pulled from
 its real `Cluster.centroid`, and (5) "what makes a song popular" (auto-fills when T36 lands).
 Bars grow-in on load (respecting `prefers-reduced-motion`); communities are colour-coded; a
+
+## T36 cut (follow-up, 2026-07-28)
+[ADR-0016](../../decisions/adr/0016-cut-second-regression-model.md) cut T36 (popularity
+regression) entirely — no dataset supports a defensible popularity regression, and popularity is a
+live, constantly-recomputed metric anyway, not a stable regression target. The "designed to plug
+in" and "deferred" notes above describing what happens "once T36 lands" no longer apply: the
+popularity/second-model section of `/analytics` stays in its graceful "not ready" state
+**permanently**, not temporarily — which needs **no code change**, since that graceful path was
+already how this page was built to handle a missing `ModelMetrics` row. The predict widget is not
+a deferred follow-up anymore; it will not be built.
 "which tribe are you?" teaser sets up the per-listener matching that arrives with T33. Added a
 populated-render test (feeds the template realistic data) so the rich path is covered even though
 the gold tables aren't in the SQLite test DB.

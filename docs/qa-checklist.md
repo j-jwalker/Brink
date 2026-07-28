@@ -92,12 +92,13 @@ Record evidence before the final course/demo release:
 | Spotify OAuth >= 95% | Repeat real Spotify login attempts against Render; count successful callbacks to `/feed`. | Manual owner run required |
 | Upload success >= 98% | Upload 5 valid JPEG/PNG files up to 10 MB through `/artist`; count successful signed upload + rendered image reads. | Manual owner run required |
 | 6/6 core features working | Complete the browser E2E list above. | Manual owner run required |
-| Real ML | Jonah-owned analytics spine must land T32/T34/T36/T38/T33/T35 before this can be fully claimed. | Blocked on analytics tickets |
+| Real ML | Jonah-owned analytics spine: T32/T34/T33/T35 landed; T36 (popularity regression) cut entirely (ADR-0016 — no dataset supports it); T38 (pipeline orchestration) still to land. | Blocked on T38 |
 | Load test at 5 users | Run `load/k6-script.js`; thresholds above must pass. | Ready to run |
 | Analytics DB integration | Run `RUN_ANALYTICS_DB_TESTS=1 uv run pytest -q` from `analytics/` against brink-dev. | Manual owner run required |
 
 ## Known Limits
 
-- T14 remains blocked on T33/T35, so cluster and compatibility cannot be verified yet.
+- T14 (profile cluster + compatibility) is unblocked (T33/T35 landed) but not yet built, so cluster and compatibility cannot be verified yet.
+- The analytics report has one real model fewer than originally scoped: T36 (popularity regression) was cut entirely (ADR-0016) — no Kaggle dataset supports a defensible popularity regression, and popularity isn't a stable regression target anyway.
 - The k6 script intentionally uses public-safe paths by default; authenticated and cron paths require local secrets passed through environment variables.
 - Browser E2E requires real Supabase/Spotify/Storage configuration and cannot be proven by CI alone.
