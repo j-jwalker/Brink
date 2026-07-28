@@ -46,6 +46,11 @@ def run_pipeline(
 
 
 if __name__ == "__main__":
-    result = run_pipeline(sys.argv[1])
+    # T34/ADR-0004 C3: k is deliberately forced to 7 for the seeded synthetic-persona
+    # system (T32), which depends on there being exactly 7 clusters — silhouette on its
+    # own prefers k=2 (disclosed, not hidden, in T34's Outcome). The automated/production
+    # run must preserve this, or a nightly re-run would silently regress the live model
+    # back to k=2 and break every persona-dependent feature.
+    result = run_pipeline(sys.argv[1], cluster_kwargs={"forced_k": 7})
     print("=== pipeline summary ===")
     print(json.dumps(result, default=str, indent=2))
