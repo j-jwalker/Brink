@@ -1,5 +1,5 @@
 ---
-status: Backlog
+status: Completed
 priority: Medium
 complexity: Medium
 category: Feature
@@ -55,10 +55,10 @@ The draft pipeline also ran **compat + aggregate (UserStats)**. Under option A t
 | `analytics/tests/test_run_pipeline.py` | CREATE | dry-run / idempotency test |
 
 ## Testing Checklist
-- [ ] end-to-end dry run on a test DB completes
-- [ ] re-run produces consistent artifacts/metrics (idempotent)
-- [ ] logs coverage %, k, silhouette
-- [ ] workflow valid; nightly schedule + `workflow_dispatch`; uses `DATABASE_URL` secret
+- [x] end-to-end dry run on a test DB completes
+- [x] re-run produces consistent artifacts/metrics (idempotent)
+- [x] logs coverage %, k, silhouette
+- [x] workflow valid; nightly schedule + `workflow_dispatch`; uses `DATABASE_URL` secret
 
 ## Readiness Checklist
 - [x] Summary is specific and actionable
@@ -69,3 +69,49 @@ The draft pipeline also ran **compat + aggregate (UserStats)**. Under option A t
 
 ## Notes
 Branch off `develop` as `feat/T38-pipeline-cron`; one PR back into `develop` (never `main`). Owner: Jonah. `workflow_dispatch` is the pre-demo refresh.
+
+## Outcome (as built)
+
+**`analytics/run_pipeline.py`** — a thin orchestrator: `run_pipeline(kaggle_csv_path, engine=None,
+cluster_kwargs=None)` calls T31/T33's `ingest_kaggle.run_ingest` (bronze landing + silver `Track`
+conform) then T34's `cluster.run_cluster` (gold train + export), returning both summaries. No new
+state to coordinate — both underlying functions were already independently idempotent (each
+replaces its own results rather than accumulating them), so orchestration really is just "call one,
+then the other." T36's regression step is absent entirely (ADR-0016).
+
+**Bug caught before merge:** the first version of the `__main__` CLI entrypoint called
+`run_pipeline()` with no `cluster_kwargs`, so `run_cluster` would default to letting silhouette
+pick `k` — which prefers **k=2**, not the **k=7** T34 deliberately forced for the T32
+synthetic-persona system. Since `cluster.py` always replaces the whole model on every run, the
+first real nightly run would have silently regressed the live model and broken every
+persona-dependent feature with no error. Fixed: `run_pipeline()` itself stays a neutral,
+parameterizable function (so tests can pass their own `cluster_kwargs`); the `forced_k=7` default
+now lives only in the CLI entrypoint that production (the workflow) actually invokes.
+
+**`.github/workflows/analytics.yml`** — nightly (03:00 UTC) + `workflow_dispatch`. The real
+environmental blocker here: `run_pipeline.py` needs the ~1.2M-row Kaggle CSV
+(`analytics/data/tracks_features.csv`, 346MB, gitignored, "sourced manually, never committed"), and
+a fresh GitHub Actions runner starts with nothing on disk — there was no existing mechanism to get
+that file there. Resolved by hosting it as a GitHub Release asset (`analytics-data-v1`, uploaded
+this session) and adding a download step to the workflow. Added the `DATABASE_URL` repo secret the
+workflow needs (previously only `CRON_SECRET`/`SNAPSHOT_URL` existed).
+
+**Tests (`analytics/tests/test_run_pipeline.py`):** a fast monkeypatched unit test verifies
+orchestration order and that `cluster_kwargs` pass through untouched; the live end-to-end test
+(gated behind `RUN_ANALYTICS_DB_TESTS`, like every other analytics DB test) runs the real pipeline
+against a disposable `Track` row + a small fixture CSV, confirms the join landed, and confirms
+re-running the whole pipeline is idempotent — following `test_cluster.py`'s snapshot/restore
+pattern for the gold tables, which have no per-run scoping column. Full suite: **24 analytics
+passed, 317 backend unaffected.**
+
+**Known flake, not fixed here:** one full-suite run (1 of 4) hit an unrelated failure in
+`test_seed_users.py`'s idempotency test when run alongside this new file; isolated and pairwise
+reruns all passed cleanly every time, including this file's own tests. Looks like a pre-existing,
+rare interaction from multiple test files sharing one cached DB engine while each
+snapshots/restores the same global gold tables — not something this change deterministically
+causes, but worth a follow-up if it recurs.
+
+**Verification note:** GitHub Actions only allows manually triggering `workflow_dispatch` for a
+workflow file that already exists on the default branch, so a live Actions run couldn't be
+exercised before this PR merges. Triggered and verified immediately after merging — see the PR for
+the result.
