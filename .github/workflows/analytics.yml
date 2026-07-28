@@ -1,0 +1,50 @@
+# WHAT THIS FILE IS
+# The scheduled trigger for the analytics training pipeline (T38): nightly + a manual
+# workflow_dispatch button for an on-demand refresh before a demo. WHY GitHub Actions and not
+# a managed cron: ADR-0006 (managed-cron cadence was too coarse; GitHub Actions keeps the
+# scheduler in-repo for free).
+#
+# WHY the download step: run_pipeline.py needs the ~1.2M-row Kaggle audio-features CSV
+# (analytics/data/tracks_features.csv), which is 346MB and gitignored — "sourced manually,
+# never committed" (see analytics/.gitignore comment). A fresh GitHub Actions runner starts
+# with nothing on disk, so the file is hosted as a GitHub Release asset (analytics-data-v1)
+# and downloaded fresh at the start of every run, into the exact path the scripts already
+# expect locally.
+#
+# Required GitHub repo secret (Settings -> Secrets and variables -> Actions):
+#   DATABASE_URL — the Supabase Postgres connection string (same one analytics/db.py reads
+#   from the root .env locally; brink-dev is currently the only database, so this is the
+#   same one production uses too).
+
+name: Analytics pipeline
+
+on:
+  # Nightly at 03:00 UTC — off-peak, well clear of the Spotify snapshot job's ~30-min cadence.
+  schedule:
+    - cron: "0 3 * * *"
+  # Manual on-demand refresh (e.g. right before a demo).
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: analytics
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+
+      - name: Download the Kaggle audio-features dataset
+        run: |
+          mkdir -p data
+          curl -fsSL -o data/tracks_features.csv \
+            https://github.com/brinkmusic/Brink/releases/download/analytics-data-v1/tracks_features.csv
+
+      - name: Run the pipeline
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run python run_pipeline.py data/tracks_features.csv
