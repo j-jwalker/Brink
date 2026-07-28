@@ -278,10 +278,12 @@ agents, not a changelog.
   UI) is done**: `/analytics` reads the real gold `ModelMetrics`/`Cluster` (no hardcoded numbers)
   and shows the K-means/community half live; the popularity/second-model slot stays in its graceful
   "not tracked" state permanently now, with no code change needed (T45 was already built to degrade
-  this way). **With `T14` complete, the planned feature backlog is empty** — the only ticket left in
-  `backlog/` is `T99` (split the shared dev/prod database), a deliberately post-deadline infra chore
-  (`T36`/`T75`/`T76` are cut/obsolete). The next steps are release hygiene: a `develop → main`
-  release PR + back-merge, then final QA (`docs/qa-checklist.md`, T61).
+  this way). **With `T14` complete, `docs/plans/tickets/backlog/` is empty** — every planned ticket
+  is done. Everything unbuilt now lives in `docs/plans/tickets/out-of-scope/`: `T36` (cut), `T75`/
+  `T76` (obsoleted by the T60 SPA retirement), and `T99` (the dev/prod DB split, deliberately
+  deferred past the deadline — the shared DB stays a known accepted risk; see Watch-outs). The next
+  steps are release hygiene: a `develop → main` release PR + back-merge, then final QA
+  (`docs/qa-checklist.md`, T61).
 
 ## Watch-outs
 
