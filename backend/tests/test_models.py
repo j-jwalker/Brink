@@ -99,3 +99,18 @@ def test_model_artifact_new_table_uses_snake_case_columns():
     # New (non-Prisma) tables use snake_case columns directly — no camelCase legacy alias.
     assert models.ModelArtifact.feature_order.property.columns[0].name == "feature_order"
     assert {c.name for c in models.ModelArtifact.__table__.primary_key.columns} == {"model_name"}
+
+
+def test_track_carries_all_ten_kmeans_features():
+    # T33 prerequisite: the trained ModelArtifact("kmeans")'s featureOrder (T34,
+    # analytics/cluster.py FEATURE_ORDER) has 10 audio features, but Track only had
+    # columns for the first 5 (from T31's join). On-demand inference can't build a
+    # taste vector comparable to what the model was trained on until Track carries
+    # all 10 — see T33's ticket "New prerequisite surfaced by T34".
+    kmeans_feature_order = [
+        "danceability", "energy", "valence", "tempo", "loudness",
+        "acousticness", "instrumentalness", "liveness", "speechiness", "mode",
+    ]
+    track_columns = {c.name for c in models.Track.__table__.columns}
+    missing = [f for f in kmeans_feature_order if f not in track_columns]
+    assert not missing, f"Track is missing kmeans feature columns: {missing}"

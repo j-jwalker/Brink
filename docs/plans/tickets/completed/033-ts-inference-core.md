@@ -1,5 +1,5 @@
 ---
-status: Backlog
+status: Completed
 priority: High
 complexity: Medium
 category: Feature
@@ -60,11 +60,12 @@ comparable vector for a real track.
 | `backend/tests/test_inference.py` | CREATE | vector + fallback + assignment tests |
 
 ## Testing Checklist
-- [ ] known fixture → expected taste vector (matches T34's feature definition)
-- [ ] fallback path: track not in Kaggle → valid genre-only vector; coverage reflects it
-- [ ] standardize uses artifact `scalerMean/Std` in `featureOrder` order
-- [ ] nearest-centroid returns the correct `Cluster` for a planted vector
-- [ ] no `ModelArtifact` present → null cluster, 200 (graceful), not 500
+- [x] known fixture → expected taste vector (matches T34's feature definition)
+- [x] fallback path: track not in Kaggle → valid corpus-mean vector (see Outcome — not literally
+      "genre-only"); coverage reflects it
+- [x] standardize uses artifact `scalerMean/Std` in `featureOrder` order
+- [x] nearest-centroid returns the correct `Cluster` for a planted vector
+- [x] no `ModelArtifact` present → null cluster, graceful, not 500
 
 ## Readiness Checklist
 - [x] Summary is specific and actionable
@@ -75,3 +76,56 @@ comparable vector for a real track.
 
 ## Notes
 Branch off `develop` as `feat/T33-taste-vectors`; one PR back into `develop` (never `main`). The feature definition here and in T34 must stay in lockstep — the `ModelArtifact` is the contract; treat any divergence as a bug. (Both are now Python, so the definition can be shared directly rather than reimplemented.) Owner: Andrea, pairing with Jonah on the feature definition.
+
+## Outcome (as built)
+
+**Prerequisite done first, as flagged above.** `silver.Track` widened with the 5 remaining kmeans
+features (`acousticness`, `instrumentalness`, `liveness`, `speechiness`, `mode`) as nullable
+`Float` columns — migration `ce6e2ca7edac` (additive, applied to `brink-dev`) — and
+`analytics/ingest_kaggle.py`'s join extended to fill them the same way as T31's original 5.
+`ingest_kaggle.py` was then **re-run against the full `tracks_features.csv`** to backfill
+already-`kaggleMatched` tracks (242 → 269 matched, 257 with all 10 features now present; the
+remaining 12 were matched by an older, since-superseded Kaggle file absent from this run's CSV —
+expected, documented behavior, not a gap this ticket introduced).
+
+**`backend/app/inference/taste_vector.py`** — `build_taste_vector(session, user_id, feature_order,
+corpus_mean)` averages the feature vectors of every track a user has played (`Play`) or shared
+(`Post`, text-only posts excluded since `trackId` is `NULL`), returning `None` for a user with no
+eligible tracks. Returns `{"vector", "coverage_pct", "track_count"}`.
+
+**`backend/app/inference/assign.py`** — `assign_cluster(session, user_id)` loads
+`ModelArtifact("kmeans")`, calls `build_taste_vector`, standardizes with `scaler_mean`/`scaler_std`
+in `feature_order`, and returns the nearest `gold.Cluster` (`{"cluster": {"id", "label"}}`) plus the
+coverage %. Wrapped in a broad `try/except` so a missing model, missing gold schema (e.g. local
+dev), or a track-less user all degrade to `{"cluster": None, "coverage_pct": None}` — same "not
+ready yet" pattern as T45's `_analytics_data`, never a 500.
+
+**Two implementation-level decisions not spelled out in the ticket, made and disclosed here rather
+than guessed silently:**
+- **C4 fallback is a corpus-mean vector, not literally "genre-only."** Neither Kaggle CSV has a
+  genre field at all — T32 hit this identical gap building its personas (see 032's Outcome). The
+  fallback for an unmatched/incomplete track is `ModelArtifact.scaler_mean` (the training corpus's
+  own average point): free (already stored), and "assume average" is the same honest-fallback
+  spirit ADR-0004 C4 asks for.
+- **"Matched" requires all 10 features present, not just `kaggleMatched=True`.** A track matched by
+  an ingest run before this ticket's schema widening had `kaggleMatched=True` but `NULL` in the 5
+  new columns until re-ingested — averaging a `None` would crash. `taste_vector.py` checks
+  completeness directly rather than trusting the flag alone, so this stays correct even if a future
+  ingest gap reopens it.
+- **Nearest-`Cluster` lookup re-standardizes each `Cluster`'s centroid at read time**, rather than
+  matching by its position in `ModelArtifact.params["centroids"]`. `gold.Cluster` stores its
+  centroid in original units (for the analytics page, T45) with no stable column linking a row back
+  to that array's order — relying on insertion order would be fragile. Standardizing each `Cluster`
+  row's own centroid with the same scaler at comparison time sidesteps that.
+
+**Tests (`backend/tests/test_inference.py`, 12 tests):** `taste_vector` is tested against a real
+in-memory SQLite DB (`Play`/`Post`/`Track` have no Postgres-only columns, so this works like
+`test_stats.py` does). `standardize`/`nearest_cluster_label` are tested as pure functions on plain
+data — `Cluster`/`ModelArtifact` use Postgres-only `JSONB` columns SQLite can't build, which is
+also why `conftest.py`'s `db_session` fixture excludes the gold tables entirely. `assign_cluster`'s
+graceful-degradation path is tested against that same fixture, since the gold tables being absent
+there **is** the "gold schema unavailable" case it needs to handle. The full wired pipeline (real
+`ModelArtifact` + real `Cluster` rows together) isn't covered by an automated test for the same
+JSONB/SQLite reason — manually verified end-to-end against `brink-dev`'s real trained model instead
+(7 clusters, correct `feature_order`, sane per-user coverage % after the backfill above), matching
+how T31/T34/T45 verified their own gold-table code. Full backend suite: **309 passed.**
