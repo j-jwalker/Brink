@@ -26,6 +26,8 @@ from sqlmodel import Session, select
 from app import spotify
 from app.db import get_session
 from app.deps import AuthError, require_user
+from app.inference.assign import assign_cluster
+from app.inference.compatibility import compatibility
 from app.models import (
     ArtistComment,
     ArtistPost,
@@ -387,6 +389,16 @@ def _profile_data(
         for r in summary["recent"]
     ]
 
+    # The analytics layer (T14): which taste "community" (gold.Cluster) this person's listening
+    # puts them in, and — when you're looking at SOMEONE ELSE — how compatible your two tastes are.
+    # Both are computed on read by the T33/T35 inference core, which already degrades to null (never
+    # raises) when no model has been trained yet or the gold schema isn't present (e.g. local dev),
+    # so a profile always renders. WHY compatibility only vs a different viewer: comparing your taste
+    # to your own is trivially ~100% and meaningless, so we skip it (and its work) on your own page.
+    is_self = person.id == viewer_id
+    taste_cluster = assign_cluster(session, person.id)["cluster"]
+    compat = None if is_self else compatibility(session, viewer_id, person.id)
+
     return {
         "id": person.id,
         "display_name": person.display_name,
@@ -397,7 +409,9 @@ def _profile_data(
         "following_count": following_count,
         "follow_list": _follow_list_items(session, person.id, list_kind),
         "is_following": is_following,
-        "is_self": person.id == viewer_id,  # hide the Follow button on your own profile
+        "is_self": is_self,  # hide the Follow button on your own profile
+        "taste_cluster": taste_cluster,  # {"id","label"} or None when no model (T14)
+        "compatibility": compat,         # 0..1 vs the viewer, or None (self / no model) (T14)
         # Does THIS person have a linked Spotify? Drives the "link Spotify" prompt on your own
         # profile when you haven't connected an account (a handle-only user has no plays to show).
         "has_spotify": person.spotify_id is not None,

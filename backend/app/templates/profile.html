@@ -143,6 +143,23 @@
   </div>
   {% endif %}
 
+  {# Taste analytics (T14): the taste "community" this person's listening puts them in (a trained
+     gold.Cluster) and — on someone else's profile — how compatible your two tastes are. Both come
+     from the on-read inference core and are null when no model is trained yet, so the whole card is
+     hidden unless there's something to show. #}
+  {% if p.taste_cluster or p.compatibility is not none %}
+  <section class="taste card">
+    <h2 class="section-title">Taste</h2>
+    {% if p.taste_cluster %}
+    <p class="taste-cluster">Taste community: <span class="taste-chip">{{ p.taste_cluster.label }}</span></p>
+    {% endif %}
+    {% if p.compatibility is not none %}
+    {# compatibility is a 0..1 score; show it as a friendly whole-number percent. #}
+    <p class="taste-compat"><b>{{ (p.compatibility * 100) | round | int }}%</b> compatible with your taste</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
   {# Listening summary (T44): what this person actually plays, from their snapshot history.
      ADR-0014 — listening surfaces here on the profile, not in the feed. #}
   {% if p.top_tracks or p.recent %}
