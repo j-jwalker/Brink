@@ -111,7 +111,11 @@ rare interaction from multiple test files sharing one cached DB engine while eac
 snapshots/restores the same global gold tables — not something this change deterministically
 causes, but worth a follow-up if it recurs.
 
-**Verification note:** GitHub Actions only allows manually triggering `workflow_dispatch` for a
-workflow file that already exists on the default branch, so a live Actions run couldn't be
-exercised before this PR merges. Triggered and verified immediately after merging — see the PR for
-the result.
+**Verification note (corrected 2026-07-28):** GitHub's repo-configured **default branch is `main`**,
+not `develop` — Brink only reaches `main` via a release PR. Both `workflow_dispatch` and the
+`schedule` cron only ever fire for a workflow file that exists on the default branch, so merging
+this into `develop` was **not** enough to make it runnable; a live Actions run can't be triggered or
+verified until a `develop → main` release ships it (the same reason `T64`'s `keepalive.yml` needed
+a release before it started working — already noted in `CLAUDE.md`'s Deployment topology section).
+The PR body's claim that this would be "triggered and verified immediately after merging" was
+wrong — corrected here rather than left standing.
