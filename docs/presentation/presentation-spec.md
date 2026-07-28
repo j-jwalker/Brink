@@ -1,253 +1,300 @@
 # Brink — Final Presentation Spec
 
-A build-ready specification for the final course presentation. Hand this to a slide tool
-(Canva / Gamma / "Claude PowerPoint") to generate the deck, and use it as the run-of-show.
+Source content for the final course presentation. Two ways to use it:
+- **Gamma (or similar):** paste this file in — each "Slide N" heading becomes a slide; the bullets are
+  on-slide content and the *Speaker notes* are the spoken script.
+- **Run-of-show:** the table and scripts below are the rehearsal guide.
 
-- **Format:** ~15 minutes + a live demo of the deployed app (https://brink-xg7p.onrender.com).
-- **Presenters (3):** **Andrea** (backend · API · auth · DB · process/governance),
-  **Jonah** (analytics / ML), **Sebastian** (frontend / UX). Sebastian drives the live demo.
-- **Slide count:** 17 (title → close). Timings below sum to ~15 min including the demo.
-- **Design language (match the product):** near-black background `#0b0b12`, panels `#15151f`,
-  primary text `#ededf5`, muted `#8a8aa3`, **lavender accent `#9d8df1`**, **hot-pink `#f472b6`**;
-  Inter font, bold negative-tracked headings, rounded cards, one accent gradient
-  (lavender→pink). Keep slides sparse — big statement + one visual; details are spoken, not written.
+A generated PowerPoint version lives alongside this file at `brink-deck.pptx` (rebuild it with
+`python build_deck.py`).
 
 ---
 
-## Narrative arc (the story we're telling)
+## For the slide generator (style guide)
 
-1. **The idea** — social media built on your *real* listening, not what you perform.
-2. **How we built it** — the process is a feature: ADRs, tickets, PR discipline, CI that enforces it.
-   This is what let a 3-person team ship and defend a real system.
-3. **The system** — one Python app (backend + data model + auth) → the ML taste layer → the UI.
-4. **See it live** — a demo that ties the three layers together on one screen.
-5. **What we learned** — honest reflection: the pivots, the cut model, the disclosed limits.
-
-Recurring thread to name out loud twice: **"we chose things we could own and defend"** — it explains
-the stack pivots, the honest disclosures, and the governance.
-
----
-
-## Run-of-show (timing + who leads)
-
-| # | Slide | Lead | Time |
-|---|---|---|---|
-| 1 | Title | Andrea | 0:20 |
-| 2 | The problem / the idea | Andrea | 1:00 |
-| 3 | What Brink is (the 30-second product) | Andrea | 1:00 |
-| 4 | How it was built — process is a feature | Andrea | 1:30 |
-| 5 | Governance: ADRs, tickets, CI | Andrea | 1:30 |
-| 6 | The two pivots | Andrea | 1:00 |
-| 7 | Architecture at a glance | Andrea | 1:00 |
-| 8 | The data model (tables) | Andrea | 1:00 |
-| 9 | Auth & security | Andrea | 0:45 |
-| 10 | Analytics: the data engineering (medallion) | Jonah | 1:15 |
-| 11 | Analytics: the ML (K-means + inference) | Jonah | 1:30 |
-| 12 | Analytics: honesty & the cut model | Jonah | 0:45 |
-| 13 | The frontend: one theme, five pages | Sebastian | 1:00 |
-| 14 | Frontend: the social details | Sebastian | 0:45 |
-| 15 | **Live demo** | Sebastian (Jonah + Andrea narrate) | 2:30 |
-| 16 | What we learned | All | 0:45 |
-| 17 | Close / thank you | Andrea | 0:15 |
-
-_Total ≈ 15:30. Trim slides 8/14 first if running long; the demo is protected time._
+- **Tone:** human, plain, honest — like three students explaining what they actually built. **Not** a
+  sales pitch. Short lines on screen; the detail is spoken.
+- **Format:** ~15 minutes, 3 presenters (**Andrea** = backend + process, **Jonah** = analytics,
+  **Sebastian** = frontend), ending in a **live demo** of the deployed app
+  (https://brink-xg7p.onrender.com). ~17 slides.
+- **Look:** dark background (near-black `#0b0b12`), off-white text (`#ededf5`), a **lavender accent
+  `#9d8df1`** and a **hot-pink accent `#f472b6`**, Inter font, rounded cards. Music-native, calm,
+  "quietly premium."
+- **Visuals:** favor images and simple diagrams over bullet walls. Screenshots of the app live in
+  `docs/screenshots/` (landing, feed, profile, artist, analytics). Slide 7 is a real labeled
+  architecture diagram, not a bullet list.
+- **The thread:** everything ties back to one idea — *we built things we could actually own and
+  defend, and we leaned on AI by giving it strong context and clear scope.*
 
 ---
 
-## Slide-by-slide
+## Run-of-show
+
+| # | Slide | Lead | Time | Visual |
+|---|---|---|---|---|
+| 1 | Title | Andrea | 0:20 | Gradient title |
+| 2 | The idea | Andrea | 1:00 | — |
+| 3 | What Brink is | Andrea | 1:00 | Feed screenshot |
+| 4 | What we really set out to do (AI) | Andrea | 1:30 | — |
+| 5 | The scaffolding that let AI build | Andrea | 1:30 | 3 cards |
+| 6 | Two times we changed our minds | Andrea | 1:00 | — |
+| 7 | How it fits together | Andrea | 1:00 | **Architecture diagram** |
+| 8 | The data behind it | Andrea | 0:50 | — |
+| 9 | Keeping accounts safe | Andrea | 0:45 | — |
+| 10 | How the data is organised | Jonah | 1:15 | — |
+| 11 | The model, in two parts | Jonah | 1:30 | Analytics screenshot |
+| 12 | Being honest about the limits | Jonah | 0:45 | — |
+| 13 | One look, five pages | Sebastian | 1:00 | Landing screenshot |
+| 14 | The small touches | Sebastian | 0:45 | Profile screenshot |
+| 15 | **Live demo** | Sebastian (+ Jonah, Andrea) | 2:30 | The live app |
+| 16 | What we took away | All | 0:45 | — |
+| 17 | Close | Andrea | 0:15 | Gradient title |
+
+_≈ 15:30 including the demo. If running long, trim slides 8 and 14 first; protect the demo._
+
+---
+
+## Slides
 
 ### Slide 1 — Title
-- **On slide:** "Brink — Music, but social. 🎶" · the live URL · three names with role tags ·
-  McGill MMA. Full-bleed dark background with the lavender→pink gradient.
-- **Andrea (0:20):** "We're Brink — a social network built on the music you actually listen to.
-  I'm Andrea on the backend, Jonah built our analytics, and Sebastian built the frontend. It's
-  live right now at this URL, and we'll demo it at the end."
+- **On slide:** "Brink — Music, but social. 🎶" · "A social app built on what you actually listen to." ·
+  the live URL · three names with role tags · McGill Desautels — MMA.
+- **Speaker notes (Andrea, 0:20):** "Hi everyone — this is Brink. It's a social app built around the
+  music you actually listen to on Spotify. I worked on the backend, Jonah did the analytics, and
+  Sebastian did the frontend. It's deployed and running, so we'll show you the real thing at the end."
 
-### Slide 2 — The problem / the idea
-- **On slide:** One line: **"Your feed is what you perform. Your listening is who you are."** One
-  supporting visual (e.g. a muted "manual post" vs a bright "real play" contrast).
-- **Andrea (1:00):** "Social feeds show a curated performance. But your listening history is honest —
-  it's who you actually are musically. Brink turns that into the social object: you share the tracks
-  you're really playing, your friends react and comment, and underneath, machine learning finds the
-  people whose taste genuinely matches yours. Two questions drove the whole build: *what do you
-  actually listen to*, and *who else listens like you*."
+### Slide 2 — The idea
+- **On slide:**
+  - On most apps, what you post is the highlight reel — a version of yourself.
+  - What you listen to is more honest: it's just what you played.
+  - So we built the feed on that — and used it to find who listens like you.
+- **Speaker notes (Andrea, 1:00):** "The starting point was simple. On most social apps, what you post
+  is a choice — you show the version of yourself you want people to see. Your listening history is
+  different: it's just what you actually played. We thought that was a more honest thing to build a
+  feed around. So on Brink you share the songs you're really listening to, people react and comment,
+  and then we use that listening data to figure out whose taste actually lines up with yours."
 
-### Slide 3 — What Brink is (the 30-second product)
-- **On slide:** 4 icons/words: **Feed · Taste communities · Compatibility · Artist portal.** A single
-  product screenshot behind them if available.
-- **Andrea (1:00):** "Concretely, four things. A **feed** of songs that play in place, with reactions
-  and comments. A **taste community** for every user — a cluster our model learns. A **compatibility
-  score** between any two people. And a lightweight **artist portal**. Everything you'll see is one
-  live app, fully built — the full requirement list is delivered and traced. Now the part we're
-  proudest of: *how* three people built and defended this."
+### Slide 3 — What Brink is
+- **Visual:** feed screenshot (`docs/screenshots/Feed-brink.png`) beside the text.
+- **On slide:**
+  - **Feed** — songs that play right in the card, with reactions & comments
+  - **Taste communities** — a group our model puts you in
+  - **Compatibility** — how close two people's taste is
+  - **Artist portal** — behind-the-scenes posts to fans
+  - It's all one live app — everything we planned is built.
+- **Speaker notes (Andrea, 1:00):** "Concretely, Brink is four things. A feed of songs that play right
+  there in the card, with reactions and comments. A taste community for each person — a group our
+  model puts you in. A compatibility score between any two people. And a small artist portal. It's all
+  one live app, and everything we set out to build is built. But the part we actually want to talk
+  about is *how* three of us built it."
 
-### Slide 4 — How it was built: process is a feature
-- **On slide:** Big number trio: **16 ADRs · 82 tickets · ~320 tests.** Subhead: "A 3-person team,
-  built to be owned and defended."
-- **Andrea (1:30):** "This is a management program, so process matters as much as code — and we
-  treated it as a feature. Three numbers: 16 architecture decision records, 82 completed tickets each
-  tied to a requirement, and about 320 automated tests. The guiding principle behind all of it:
-  *we only build things we can own and defend.* That one idea explains almost every decision, and
-  it's why we made two big pivots you'll see in a moment."
+### Slide 4 — What we really set out to do
+- **On slide:**
+  - A big goal was to see how far we could get by leaning on AI coding agents.
+  - We learned fast: **AI is only as good as the context you give it.**
+  - So the job was two things — give the agents rich context, and be exact about what to build.
+  - Our first couple of weeks were planning, not code: **ADRs, tickets, and project governance.**
+- **Speaker notes (Andrea, 1:30):** "Honestly, one of our real goals on this project was to see how
+  far we could get by leaning on AI coding agents — to build as much as we possibly could as a team of
+  three. And what we learned early is that AI is only as good as the context you give it. If you're
+  vague, you get vague. So the whole job became two things: give the agents as much context as
+  possible, and be really precise about exactly what we wanted built. That's why our first couple of
+  weeks weren't spent writing app code at all — we were setting up what we call our ADRs, our tickets,
+  and our project governance. That planning is what made everything afterwards move fast."
 
-### Slide 5 — Governance: ADRs, tickets, CI
-- **On slide:** Three columns — **Decide (ADRs, append-only) → Scope (tickets → requirements) →
-  Enforce (CI: tests, secret scan, docs-sync gate).** Small arrow flowing left to right.
-- **Andrea (1:30):** "Our workflow has three gates. **Decide:** every architectural choice is a
-  written ADR — and they're append-only, so to change our minds we supersede rather than edit, and
-  the reasoning never goes stale. **Scope:** every change is one ticket, one pull request, traced to
-  a requirement — no scope creep. **Enforce:** CI runs the tests and a secret scan on every PR, plus
-  a custom **docs-sync gate** — if you change code but not its docs, the build fails. You literally
-  cannot merge stale documentation. That's how the paper trail stayed honest with three people moving
-  fast."
+### Slide 5 — The scaffolding that let AI build
+- **Visual:** three cards side by side.
+  - **ADRs** — Every real decision, written down with the reasoning. So an agent or a teammate knows
+    *why* things are the way they are. Append-only: we supersede, never quietly edit.
+  - **Tickets** — One clear piece of work at a time. The agent builds exactly that — nothing more.
+    Each one traces back to a requirement.
+  - **Governance** — Guardrails around every change: one PR at a time. Tests + a secret scan run
+    automatically. A check fails if you change code but not its docs.
+- **Speaker notes (Andrea, 1:30):** "So what does that scaffolding actually look like. ADRs are
+  architecture decision records — every real decision written down with the reasoning behind it, so
+  anyone picking up the work, an agent or one of us, knows why things are the way they are. Tickets
+  break the work into one clear piece at a time, so the agent builds exactly that and nothing else.
+  And governance is the guardrails — every change is a pull request, tests and a secret-scanner run
+  automatically, and we even have a check that fails if you change code without updating its docs. All
+  of that is context and clarity — which is exactly what the agents needed to be useful."
 
-### Slide 6 — The two pivots
-- **On slide:** Two before→after arrows:
-  **TypeScript / Vercel / Prisma → FastAPI / Render (ADR-0010)** and
-  **React SPA → server-rendered Jinja pages (ADR-0013).** Caption: "one Python codebase we can all
-  read."
-- **Andrea (1:00):** "Two pivots, both from the same principle. We started on a TypeScript backend
-  and a separate React frontend. But security-critical code — auth, token encryption — in a language
-  not everyone on the team could review is a liability for a graded project. So we moved the backend
-  to Python/FastAPI, then retired the React app for server-rendered pages. The end state: one Python
-  codebase every one of us can read, review, and defend. Both decisions are ADRs with the full
-  reasoning."
+### Slide 6 — Two times we changed our minds
+- **On slide:**
+  - Backend: TypeScript / Vercel → Python / FastAPI (ADR-0010)
+  - Frontend: React app → simpler server-rendered pages (ADR-0013)
+  - **Why both times:** the security-sensitive parts were in a stack we couldn't all read.
+  - Now it's one Python codebase all three of us can actually read and defend.
+- **Speaker notes (Andrea, 1:00):** "There were two moments where we changed our minds, and they're
+  worth sharing because the reasoning was the same both times. We started the backend in TypeScript and
+  the frontend as a separate React app. But the security-sensitive parts — logins, encrypting people's
+  tokens — were in a stack not all three of us could confidently read. For a graded project, that's a
+  real risk. So we moved the backend to Python, and later replaced the React app with simpler
+  server-rendered pages. Now it's one Python codebase all of us can read and defend. Both of those are
+  written up as ADRs, so you can see the reasoning."
 
-### Slide 7 — Architecture at a glance
-- **On slide:** The README architecture diagram, simplified: Browser → FastAPI (Render) →
-  Supabase Postgres/Auth/Storage; a side branch for the analytics cron writing to the gold schema.
-- **Andrea (1:00):** "The whole product is one FastAPI app on Render. It serves the JSON API *and*
-  the HTML pages, same-origin — no CORS, no separate build. Supabase gives us Postgres, auth, and
-  file storage. And a separate Python analytics job runs nightly on GitHub Actions, trains our model,
-  and writes results back into the same database, which the app reads on the fly. Simple, cheap,
-  entirely on free tiers."
+### Slide 7 — How it fits together  (architecture diagram)
+- **Visual — a labeled diagram, not bullets:**
+  - Top: **Your browser** (web pages + light JS) and **Spotify** (logins · listening · catalog).
+  - Center: one container box **"FastAPI app · Render"** holding four components — **Web pages
+    (Jinja)**, **JSON API**, **Auth (JWT · AES-256)**, **Inference (on read)**.
+  - Bottom: **Supabase** (Postgres with public + bronze/silver/gold, Auth, Storage) and the
+    **Analytics pipeline** (GitHub Actions, nightly — trains K-means → writes gold).
+  - Arrows: browser →(HTTPS, same-origin)→ app; Spotify ↔(OAuth · now playing)↔ app; app →(SQLModel
+    ORM)→ Supabase; Analytics →(writes gold)→ Postgres.
+  - Caption: "One app is everything the user touches. A nightly job trains the model on the side; the
+    app just reads the results."
+- **Speaker notes (Andrea, 1:00):** "Here's how it all fits together. Everything the user touches is
+  one app — a FastAPI service on Render that serves both the web pages and the API, so there's no
+  separate frontend to deploy. It talks to Supabase for the database, logins, and file storage. Off to
+  the side, a Python job runs every night on GitHub Actions, trains our model, and writes the results
+  into the database — and the app just reads those results when someone loads a page. And Spotify is
+  where the logins and the listening data come from."
 
-### Slide 8 — The data model
-- **On slide:** Grouped table list. **Social (`public`):** User, Post, Reaction, Comment, Follow,
-  ArtistPost… **Analytics (medallion):** `silver.Track`, `silver.Play`, `gold.Cluster`,
-  `gold.ModelMetrics`, `gold.ModelArtifact`, `bronze.*_raw`.
-- **Andrea (1:00):** "About 14 tables. The social side is what you'd expect — users, posts,
-  reactions, comments, the follow graph. The interesting part is that the analytics tables live in
-  their own **medallion** schemas — bronze, silver, gold — right alongside the social data in one
-  Postgres. Jonah will explain why that matters. One nice detail: a user's cluster and compatibility
-  aren't *stored* — they're computed on read, so they're never stale."
+### Slide 8 — The data behind it  (~14 tables)
+- **On slide:**
+  - **Social:** users, posts, reactions, comments, the follow graph.
+  - **Music & model:** tracks, plays, and the taste communities the model produces.
+  - A person's community and compatibility aren't stored — we work them out on the spot, so they're
+    never stale.
+- **Speaker notes (Andrea, 0:50):** "Behind it is about 14 tables. The social side is what you'd
+  expect — users, posts, reactions, comments, who follows whom. The music side holds the tracks,
+  everyone's plays, and the taste communities the model produces. One thing we're a little proud of: a
+  person's community and their compatibility with you aren't saved anywhere — we work them out on the
+  spot when you load the page, so they're never out of date."
 
-### Slide 9 — Auth & security
-- **On slide:** Three shields: **Server-side JWT validation (no secret held) · Spotify tokens
-  AES-256-GCM at rest · Per-user rate limiting + secret-scanning CI.**
-- **Andrea (0:45):** "Security was the reason for the Python pivot, so we take it seriously. We
-  validate Supabase tokens server-side and never hold a JWT secret. We own long-term Spotify access
-  by storing the refresh token **encrypted** with AES-256-GCM. Writes are rate-limited per user, and
-  a secret scanner runs on every commit locally and in CI. Over to Jonah for the analytics."
+### Slide 9 — Keeping accounts safe
+- **On slide:**
+  - We check every login on our server — we never hold a master key.
+  - Spotify tokens are encrypted before they're stored (AES-256-GCM).
+  - Limits on how fast anyone can post, and a secret-scanner on every commit.
+  - Security was the reason we moved to Python — so we took it seriously.
+- **Speaker notes (Andrea, 0:45):** "On security — we validate every login on our own server and never
+  hold a master secret. The tokens we keep for Spotify are encrypted before they ever touch the
+  database. There are limits on how fast anyone can post, and a scanner runs on every single commit to
+  make sure we never accidentally check in a password or key. Security was the reason we moved to
+  Python in the first place, so we didn't cut corners here. I'll hand over to Jonah for the analytics."
 
-### Slide 10 — Analytics: the data engineering (medallion)
-- **On slide:** Three stacked layers — **bronze (raw landings) → silver (conformed: Track, Play) →
-  gold (model output: Cluster, Metrics, Artifact).** Note: "all in free Supabase Postgres — no
-  lakehouse."
-- **Jonah (1:15):** "Our data is organized in a **medallion** architecture — a standard data-
-  engineering pattern. **Bronze** is raw, immutable landings: every Spotify 'recently played' pull
-  and the raw Kaggle rows. **Silver** is cleaned, conformed data the app actually uses — the tracks
-  and the plays. **Gold** is model output — the clusters and the trained model itself. We did this on
-  plain free Postgres, no Spark or lakehouse — right-sized for the scale, and it gives us clean,
-  legible data lineage we can point to."
+### Slide 10 — How the data is organised
+- **On slide:**
+  - **Raw** — everything exactly as it arrives (Spotify pulls, dataset rows).
+  - **Cleaned** — tidied into the tables the app actually uses.
+  - **Model output** — the communities and the trained model itself.
+  - A standard "medallion" pattern — a bit more structure than we strictly needed, but everything
+    stays traceable.
+- **Speaker notes (Jonah, 1:15):** "The data side is organised in three layers — people call it a
+  medallion. The first layer is raw: everything exactly as it arrives, the Spotify listening pulls and
+  the raw dataset rows. The second is that data cleaned up into the tables the app actually uses. And
+  the third is the output of our model — the communities and the model itself. It's a common
+  data-engineering pattern, and honestly at our scale it's a little more structure than we strictly
+  needed — but it keeps everything traceable, and it's the right way to do it."
 
-### Slide 11 — Analytics: the ML (K-means + on-read inference)
-- **On slide:** Two boxes joined by an arrow labeled "ModelArtifact." Left: **Batch — K-means, 7
-  taste communities, trained on ~1.2M tracks × 10 audio features.** Right: **On read — build a user's
-  taste vector → nearest cluster → cosine compatibility.**
-- **Jonah (1:30):** "The ML has two halves. **Offline**, a nightly job trains **K-means** on about
-  1.2 million tracks across ten audio features — danceability, energy, valence, and so on — and
-  produces seven **taste communities**. It exports a self-describing 'model artifact' — the centroids
-  and the scaler — into the gold schema. **Online**, when you load a profile, the app builds that
-  user's taste vector from the songs they've played, standardizes it with that same artifact, and
-  finds their nearest community. **Compatibility** between two people is just the cosine similarity of
-  their taste vectors. Nothing is hardcoded — the app reads whatever the last training run produced."
+### Slide 11 — The model, in two parts
+- **Visual:** analytics screenshot (`docs/screenshots/analytics-brink.png`) beside the text.
+- **On slide:**
+  - **Once a night:** we cluster ~1.2M songs by their sound (danceable, energetic, upbeat…) into 7
+    taste communities.
+  - **When you open a profile:** we place that person's songs against the communities and find where
+    they fit.
+  - Compatibility = how close two people's taste profiles are.
+  - Nothing's hard-coded — retrain tonight, the app updates tomorrow.
+- **Speaker notes (Jonah, 1:30):** "The model is in two parts. Once a night, we train a clustering
+  model on about 1.2 million songs, using audio features like how danceable or energetic or upbeat a
+  track is — that sorts songs into seven taste communities. Then, when you actually open someone's
+  profile, we take the songs they've played, place them against those communities, and find where they
+  fit. Compatibility between two people is just how close their two taste profiles are. And nothing is
+  hard-coded — if we retrain the model tonight, the app picks up the new version tomorrow. This page is
+  that model's output, live."
 
-### Slide 12 — Analytics: honesty & the cut model
-- **On slide:** Three honest notes: **Forced k=7 (silhouette preferred k=2) — disclosed ·
-  ~24% Kaggle coverage — logged, not hidden · Second (popularity) model CUT — ADR-0016.**
-- **Jonah (0:45):** "And we were honest about the limits. The math actually preferred just two
-  clusters, but a persona feature needs more, so we forced seven — and we *disclose* that, we didn't
-  bury it. We report our real data-coverage numbers. And we originally planned a second model to
-  predict song popularity — we **cut it** with a written ADR, because no dataset we had could support
-  it honestly, and popularity isn't a stable thing to predict anyway. Cutting it cleanly was the
-  right engineering call. Sebastian will show how this surfaces in the product."
+### Slide 12 — Being honest about the limits
+- **On slide:**
+  - The math actually liked just 2 groups — we chose 7 on purpose, and we say so.
+  - Only ~a quarter of songs matched our dataset — we report that, we don't hide it.
+  - We planned a second model (song popularity) and cut it — the data couldn't support it. We wrote
+    down why.
+- **Speaker notes (Jonah, 0:45):** "We also want to be upfront about the limits, because we think that
+  matters. The math actually suggested only two groups was cleanest — but two isn't very interesting as
+  'communities,' so we chose seven on purpose, and we say that openly. Only about a quarter of songs
+  matched our dataset, and we report that honestly rather than hiding it. And we'd planned a second
+  model to predict song popularity, but the data just couldn't support it honestly, so we cut it — and
+  wrote down why. We'd rather show you the real picture than a polished one. Sebastian will show where
+  all this shows up in the app."
 
-### Slide 13 — The frontend: one theme, five pages
-- **On slide:** A filmstrip of the five pages (landing, feed, profile, artist, analytics). Caption:
-  "Server-rendered · dark, music-native · lavender & pink."
-- **Sebastian (1:00):** "The whole frontend is server-rendered pages with a single, consistent
-  theme — dark, quiet, music-native, with a lavender-and-pink accent. Five pages: a landing page, the
-  feed, profiles, an artist studio, and an analytics page. There's no separate JavaScript app to
-  build — the interactivity is lightweight JavaScript talking to the same API, which keeps the whole
-  thing simple and fast to load."
+### Slide 13 — One look, five pages
+- **Visual:** landing screenshot (`docs/screenshots/Landing-brink.png`) beside the text.
+- **On slide:**
+  - Dark, calm, music-first — a lavender & pink accent throughout.
+  - **Landing · Feed · Profile · Artist studio · Analytics**
+  - No separate app to build — the pages come from the same server, with light JavaScript for the
+    interactive bits.
+  - That kept it fast, and simple for a small team to maintain.
+- **Speaker notes (Sebastian, 1:00):** "The whole frontend has one consistent look — dark, calm,
+  music-first, with a lavender-and-pink accent. There are five pages: the landing page, the feed,
+  profiles, an artist studio, and the analytics page. There's no separate app to build — the pages come
+  straight from the same server, with just a bit of JavaScript for the interactive parts. That kept
+  everything fast to load and simple for a small team to keep up with."
 
-### Slide 14 — Frontend: the social details
-- **On slide:** Zoom-ins of four touches: **Play-in-place (Spotify embed) · "Liked by X and N others"
-  · Double-tap-to-heart · "Share what you're hearing" one-tap.**
-- **Sebastian (0:45):** "The details are what make it feel social. Songs **play in place** — tap the
-  album art and a Spotify player opens in the card. You get a 'Liked by' line, **double-tap to
-  heart** like you'd expect, and a one-tap 'share what you're hearing' that reads your current track
-  straight from Spotify. Every empty state has a friendly nudge instead of a blank screen. Let me show
-  you the real thing."
+### Slide 14 — The small touches
+- **Visual:** profile screenshot (`docs/screenshots/Profile-brink.png`) beside the text.
+- **On slide:**
+  - Tap the album art — a Spotify player opens right in the card.
+  - A "liked by" line, and double-tap to heart, like you'd expect.
+  - One tap to share whatever you're playing right now.
+  - Every empty screen has a friendly nudge, not a blank space.
+- **Speaker notes (Sebastian, 0:45):** "The small touches are what make it feel like a real social app.
+  Tap the album art and a Spotify player opens right there in the card. There's a 'liked by' line, and
+  you can double-tap to heart a song like you'd expect. There's a one-tap button to share whatever
+  you're playing right now. And every empty screen — no posts yet, nothing playing — has a friendly
+  nudge instead of a blank space. Let me just show you the real thing."
 
-### Slide 15 — LIVE DEMO
-- **On slide:** Just the URL + "Live demo" (so the projector has something if you tab away).
-- **Demo script (Sebastian drives; ~2:30). Have a logged-in account ready and a second profile to
-  compare against. Pre-open the tab and warm the Render instance beforehand so there's no cold-start
-  wait.**
-  1. **Landing → feed (Sebastian):** "Here's the live app." Scroll the feed. Tap album art — "it
-     plays right here." React and drop a comment.
-  2. **Share (Sebastian):** Open the composer, use "share what you're hearing," post it. "That's a
-     real track from my Spotify."
-  3. **Profile + taste (Andrea narrates):** Open a profile. "Streak, top tracks — and here's the
-     analytics tying in: this person's **taste community**, and because it's not me, a **compatibility
-     score**. Both computed live, right now."
-  4. **Analytics page (Jonah narrates):** "And here's the model itself — seven taste tribes, how
-     distinct they are, and each tribe's audio DNA. These are real numbers from last night's training
-     run, not mockups."
-  5. **(Optional) Artist studio (Sebastian):** quick look at a behind-the-scenes post.
-- **Fallback:** if the live app misbehaves, cut to pre-recorded screenshots on the next slides.
-  **Always have screenshots embedded as a backup.**
+### Slide 15 — Live demo
+- **On slide:** the live URL + "Let's look at the real thing" + the 4 demo steps.
+- **Demo script (Sebastian drives; ~2:30). Pre-warm the site so there's no cold-start wait. Have a
+  logged-in account with real data and a second profile to compare against.**
+  1. **Feed (Sebastian):** "This is the live app." Scroll; tap album art so a song plays in the card;
+     react and drop a comment.
+  2. **Share (Sebastian):** use the one-tap "share what you're playing" and post it.
+  3. **Profile (Andrea narrates):** open someone else's profile — their streak, top tracks, their taste
+     community, and since it's not me, a compatibility score — all worked out live.
+  4. **Analytics (Jonah narrates):** the seven communities, how distinct they are, each one's audio
+     DNA — real numbers from last night's run.
+- **Fallback:** if anything breaks, switch to the screenshots (they're the following slides / an
+  appendix in the deck). Always have them on hand.
 
-### Slide 16 — What we learned
-- **On slide:** Three takeaways: **Pivot early when you can't defend a choice · Disclose limits,
-  don't hide them · Process discipline is what let 3 people ship.**
-- **All (0:45) — one line each:**
-  - **Andrea:** "The willingness to pivot the stack twice — early, while it was cheap — is what kept
-    the project reviewable."
-  - **Jonah:** "Being honest about the model's limits made the analytics *more* credible, not less."
-  - **Sebastian:** "One codebase and one theme meant we moved fast without stepping on each other."
+### Slide 16 — What we took away
+- **On slide (one line each):**
+  - The AI was only as good as the context and structure we gave it. — Andrea
+  - Being honest about the model's limits made it more convincing, not less. — Jonah
+  - One codebase and one look let three people move without stepping on each other. — Sebastian
+- **Speaker notes (all, 0:45):** each presenter says their own line. "The biggest lesson for me was
+  that the AI was only ever as good as the context and structure we gave it — the planning up front was
+  the whole game." / "Being honest about the model's limits made it more convincing, not less." /
+  "Keeping it to one codebase and one consistent look is what let three of us move fast without
+  stepping on each other."
 
 ### Slide 17 — Close
-- **On slide:** "Brink — Music, but social. 🎶" · live URL · "Thank you — questions?"
-- **Andrea (0:15):** "That's Brink — live, built, and ours to defend. Thank you. Happy to take
-  questions."
+- **On slide:** "Brink — Music, but social. 🎶" · "Thanks — happy to take questions." · the live URL.
+- **Speaker notes (Andrea, 0:15):** "That's Brink — live, and built by the three of us. Thanks for
+  listening — we're happy to take any questions."
 
 ---
+
+## Appendix — screenshot slides (demo fallback)
+
+The generated `.pptx` includes five full-bleed screenshot slides right after the demo, as a backup if
+the live app misbehaves: landing, feed, profile, artist studio, analytics. In Gamma, add these as an
+appendix from `docs/screenshots/` if you want the same safety net.
 
 ## Anticipated Q&A (prep, not slides)
 
-- **"Why K-means and not something fancier?"** — It's interpretable, cheap, and fits the scale; we
-  compared against GMM and it didn't do better. Interpretability mattered for a defensible demo.
-- **"Only ~24% of tracks matched the dataset — isn't compatibility meaningless?"** — Yes, at low
-  coverage most users share the corpus-mean fallback and score high; we disclose this as a data-
-  sparsity artifact, not a bug. More listening data or a bigger feature source fixes it.
-- **"Dev and prod share one database — isn't that risky?"** — Correct, and we logged it as an
-  accepted risk (T99) deliberately deferred past the deadline rather than pretending it's solved.
-- **"Is it really machine learning or just rules?"** — Real unsupervised K-means trained on 1.2M
-  tracks; the cluster *labels* are rule-based descriptions of the learned centroids, which we're
-  explicit about.
-- **"Why retire the React app — isn't that a step back?"** — For a 3-person graded project, being
-  able to review every line beat having a fancier SPA nobody but one person could defend.
-
----
-
-## Build checklist for the deck
-
-- [ ] Generate 17 slides from the sections above in the product's color palette (dark + lavender/pink).
-- [ ] Embed screenshots (see `docs/screenshots/` — capture first) on slides 3, 13, 14, and as demo
-      fallback after slide 15.
-- [ ] Simplify the architecture diagram (slide 7) from the README's ASCII into a clean graphic.
-- [ ] Add speaker notes = the scripts above, so each presenter has their lines in the deck.
-- [ ] Rehearse the demo once end-to-end with the Render instance pre-warmed.
+- **"Why K-means and not something fancier?"** — It's interpretable, cheap, and fits our scale; we
+  compared it against another method and it didn't do better. Being able to explain it mattered.
+- **"Only ~a quarter of songs matched — isn't compatibility meaningless?"** — At low coverage a lot of
+  people share the same fallback and score high; we call that out as a data-sparsity artifact, not a
+  bug. More listening data or a bigger song dataset fixes it.
+- **"Dev and prod share one database — isn't that risky?"** — Yes, and we logged it as an accepted risk
+  we deliberately chose not to fix before the deadline, rather than pretending it's solved.
+- **"Is it really machine learning or just rules?"** — It's real unsupervised clustering on 1.2M
+  songs; only the community *names* are simple rule-based descriptions of what each group sounds like,
+  and we're clear about that.
+- **"Why retire the React app — isn't that a step back?"** — For three people on a graded project,
+  being able to read and defend every line beat a fancier app only one of us could maintain.
