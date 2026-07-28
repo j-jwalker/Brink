@@ -259,14 +259,21 @@ agents, not a changelog.
 - **Next feature work:** start from `docs/plans/tickets/README.md` before choosing a ticket. The
   Wave 2 music-identity trio (`T100`–`T102`), `T103` signing hardening, and `T104` text-only posts
   are **complete**, as is the 2026-07-22 non-analytics UI hardening wave (`T80`–`T86`) and the
-  social quick-wins wave (`T94`–`T97`). For analytics, `T32`, `T33`, and `T35` are **complete**;
-  `T14` is next, unblocked. **`T36` (popularity regression) was cut entirely** ([ADR-0016](docs/decisions/adr/0016-cut-second-regression-model.md)):
-  no dataset supports a defensible popularity regression, and popularity is a live, constantly-
-  recomputed metric anyway — not a stable regression target. This unblocks **`T38`** (pipeline
-  orchestration), which no longer depends on it. **`T45` (analytics UI) is done**: `/analytics`
-  reads the real gold `ModelMetrics`/`Cluster` (no hardcoded numbers) and shows the K-means/
-  community half live; the popularity/second-model slot stays in its graceful "not tracked" state
-  permanently now, with no code change needed (T45 was already built to degrade this way).
+  social quick-wins wave (`T94`–`T97`). For analytics, `T32`, `T33`, `T35`, and `T38` are
+  **complete**; `T14` is next, unblocked. **`T36` (popularity regression) was cut entirely**
+  ([ADR-0016](docs/decisions/adr/0016-cut-second-regression-model.md)): no dataset supports a
+  defensible popularity regression, and popularity is a live, constantly-recomputed metric anyway —
+  not a stable regression target. **`T38`** built `analytics/run_pipeline.py` (orchestrates T31/T33's
+  ingest + T34's cluster export, nightly at 03:00 UTC + `workflow_dispatch` via
+  `.github/workflows/analytics.yml`) — its CLI entrypoint forces `k=7` so an automated run can never
+  silently regress T32's persona system back to silhouette's preferred `k=2`. The ~1.2M-row Kaggle
+  CSV the pipeline needs is hosted as a GitHub Release asset (`analytics-data-v1`, 346MB) and
+  downloaded fresh each run, since it's gitignored and a runner starts empty; the workflow needs a
+  new `DATABASE_URL` repo secret (added alongside `CRON_SECRET`/`SNAPSHOT_URL`). **`T45` (analytics
+  UI) is done**: `/analytics` reads the real gold `ModelMetrics`/`Cluster` (no hardcoded numbers)
+  and shows the K-means/community half live; the popularity/second-model slot stays in its graceful
+  "not tracked" state permanently now, with no code change needed (T45 was already built to degrade
+  this way).
 
 ## Watch-outs
 
