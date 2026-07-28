@@ -253,14 +253,19 @@ agents, not a changelog.
   on identical pairs, reusing the same `ModelArtifact` load so both vectors share a feature space —
   null (never an error) if either side has no taste vector or the model isn't available. At today's
   ~24% Kaggle-match coverage most real users score near 1.0 (they share T33's corpus-mean fallback
-  for unmatched tracks) — disclosed as a data-sparsity artifact, not a bug. `T14` (the profile
-  endpoint that surfaces both the cluster and the compatibility score) is next, now the only
-  blocker left on the analytics-to-profile spine.
+  for unmatched tracks) — disclosed as a data-sparsity artifact, not a bug. `T14` closed the
+  analytics-to-profile spine: the `/u/{handle}` page now shows a **"Taste community"** cluster label
+  (T33) and, on someone else's profile, a **"% compatible with your taste"** line (T35) — computed on
+  read in `_profile_data`, hidden on your own profile, and degrading to null (never 500) when no
+  model is trained. No new endpoint (ADR-0013: page + API are one app) and no new CSS. Its listed
+  "top genres" were **dropped** — there is no genre field anywhere (no `Track.genre`; neither Kaggle
+  CSV has one, the same gap `T32`/`T33` hit), so it isn't buildable without a new data source
+  (`AN-7` note updated).
 - **Next feature work:** start from `docs/plans/tickets/README.md` before choosing a ticket. The
   Wave 2 music-identity trio (`T100`–`T102`), `T103` signing hardening, and `T104` text-only posts
   are **complete**, as is the 2026-07-22 non-analytics UI hardening wave (`T80`–`T86`) and the
-  social quick-wins wave (`T94`–`T97`). For analytics, `T32`, `T33`, `T35`, and `T38` are
-  **complete**; `T14` is next, unblocked. **`T36` (popularity regression) was cut entirely**
+  social quick-wins wave (`T94`–`T97`). For analytics, `T32`, `T33`, `T35`, `T38`, and now `T14`
+  are **complete** — the analytics-to-profile spine is closed. **`T36` (popularity regression) was cut entirely**
   ([ADR-0016](docs/decisions/adr/0016-cut-second-regression-model.md)): no dataset supports a
   defensible popularity regression, and popularity is a live, constantly-recomputed metric anyway —
   not a stable regression target. **`T38`** built `analytics/run_pipeline.py` (orchestrates T31/T33's
@@ -273,7 +278,10 @@ agents, not a changelog.
   UI) is done**: `/analytics` reads the real gold `ModelMetrics`/`Cluster` (no hardcoded numbers)
   and shows the K-means/community half live; the popularity/second-model slot stays in its graceful
   "not tracked" state permanently now, with no code change needed (T45 was already built to degrade
-  this way).
+  this way). **With `T14` complete, the planned feature backlog is empty** — the only ticket left in
+  `backlog/` is `T99` (split the shared dev/prod database), a deliberately post-deadline infra chore
+  (`T36`/`T75`/`T76` are cut/obsolete). The next steps are release hygiene: a `develop → main`
+  release PR + back-merge, then final QA (`docs/qa-checklist.md`, T61).
 
 ## Watch-outs
 
