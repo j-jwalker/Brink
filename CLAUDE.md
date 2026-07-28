@@ -260,11 +260,13 @@ agents, not a changelog.
   Wave 2 music-identity trio (`T100`–`T102`), `T103` signing hardening, and `T104` text-only posts
   are **complete**, as is the 2026-07-22 non-analytics UI hardening wave (`T80`–`T86`) and the
   social quick-wins wave (`T94`–`T97`). For analytics, `T32`, `T33`, and `T35` are **complete**;
-  `T14` is next, unblocked. **`T45` (analytics UI) is done**: `/analytics` reads the real gold
-  `ModelMetrics`/`Cluster` (no hardcoded numbers), shows the K-means/community half live, and
-  auto-fills the popularity half the moment `T36` writes `ModelMetrics("popularity_regression")` —
-  no code change (the client-side predict widget is the one deferred piece, pending `T36`'s
-  exported coefficients).
+  `T14` is next, unblocked. **`T36` (popularity regression) was cut entirely** ([ADR-0016](docs/decisions/adr/0016-cut-second-regression-model.md)):
+  no dataset supports a defensible popularity regression, and popularity is a live, constantly-
+  recomputed metric anyway — not a stable regression target. This unblocks **`T38`** (pipeline
+  orchestration), which no longer depends on it. **`T45` (analytics UI) is done**: `/analytics`
+  reads the real gold `ModelMetrics`/`Cluster` (no hardcoded numbers) and shows the K-means/
+  community half live; the popularity/second-model slot stays in its graceful "not tracked" state
+  permanently now, with no code change needed (T45 was already built to degrade this way).
 
 ## Watch-outs
 

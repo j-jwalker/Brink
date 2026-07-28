@@ -4,7 +4,7 @@ priority: Medium
 complexity: Medium
 category: Feature
 tags: [analytics, python, ci, github-actions, scheduling]
-blocked_by: [031, 034, 036]
+blocked_by: [031, 034]
 blocks: []
 parent_ticket: null
 owner: Jonah
@@ -23,15 +23,17 @@ An idempotent `run_pipeline.py` structured as explicit **bronze → silver → g
 - ADRs: [ADR-0006](../../../decisions/adr/0006-scheduling.md) (GitHub Actions, nightly + dispatch) · [ADR-0009](../../../decisions/adr/0009-medallion-layering.md) (staged bronze/silver/gold) · [ADR-0003](../../../decisions/adr/0003-analytics-runtime.md)
 
 ## ⚠ Changed from draft
-The draft pipeline also ran **compat + aggregate (UserStats)**. Under option A those are TS on-read (T35/T14), so the pipeline is **train-and-export only** — ingest, cluster, regression, write `Cluster`/`ModelMetrics`/`ModelArtifact`. No per-user steps.
+The draft pipeline also ran **compat + aggregate (UserStats)**. Under option A those are TS on-read (T35/T14), so the pipeline is **train-and-export only** — ingest, cluster, write `Cluster`/`ModelMetrics`/`ModelArtifact`. No per-user steps.
+
+**⚠ Also changed (2026-07-28):** the draft had a gold-stage regression step (T36). [ADR-0016](../../../decisions/adr/0016-cut-second-regression-model.md) cut T36 entirely — no dataset supports a defensible popularity regression, and popularity isn't a stable regression target anyway. This pipeline now orchestrates **cluster export only**; there is no regression step to run.
 
 ## Scope
 ### In Scope
 - `analytics/run_pipeline.py` — idempotent, **staged** (ADR-0009):
   - **bronze** — land raw Kaggle (T31) into `bronze.kaggle_tracks_raw` (snapshots land via T21).
   - **silver** — conform into `Track`/`Play` (join audio features, coverage, dedup).
-  - **gold** — cluster+export (T34) → regression+export (T36); write `Cluster`/`ModelMetrics`/`ModelArtifact`.
-  - structured per-stage logging of coverage/k/silhouette/R²/RMSE; each stage independently re-runnable/backfillable.
+  - **gold** — cluster+export (T34); write `Cluster`/`ModelMetrics`/`ModelArtifact`.
+  - structured per-stage logging of coverage/k/silhouette; each stage independently re-runnable/backfillable.
 - `.github/workflows/analytics.yml` — `astral-sh/setup-uv`, `uv sync` + `uv run python run_pipeline.py`; `schedule` (nightly) + `workflow_dispatch`; `DATABASE_URL` secret.
 
 ### Out of Scope
@@ -41,7 +43,8 @@ The draft pipeline also ran **compat + aggregate (UserStats)**. Under option A t
 - **Integrity:** idempotent — a re-run reproduces consistent artifacts/metrics; failures don't leave half-written model state.
 
 ## Current State (on `develop`)
-- `analytics/` with `db.py`, `ingest_kaggle.py`, `cluster.py`, `regression.py` (T30/T31/T34/T36).
+- `analytics/` with `db.py`, `ingest_kaggle.py`, `cluster.py` (T30/T31/T34). No `regression.py` —
+  T36 was cut ([ADR-0016](../../../decisions/adr/0016-cut-second-regression-model.md)).
 - No `run_pipeline.py` or `.github/workflows/analytics.yml` yet.
 
 ## Files to Create/Modify
@@ -54,14 +57,14 @@ The draft pipeline also ran **compat + aggregate (UserStats)**. Under option A t
 ## Testing Checklist
 - [ ] end-to-end dry run on a test DB completes
 - [ ] re-run produces consistent artifacts/metrics (idempotent)
-- [ ] logs coverage %, k, silhouette, R², RMSE
+- [ ] logs coverage %, k, silhouette
 - [ ] workflow valid; nightly schedule + `workflow_dispatch`; uses `DATABASE_URL` secret
 
 ## Readiness Checklist
 - [x] Summary is specific and actionable
 - [x] Files to Create/Modify is populated
 - [x] Testing Checklist has items
-- [x] Dependencies identified (T31, T34, T36 → blocked_by 031, 034, 036)
+- [x] Dependencies identified (T31, T34 → blocked_by 031, 034)
 - [x] Scope boundaries defined
 
 ## Notes
