@@ -8,12 +8,13 @@
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build",
+    "build:pages": "vite build --config vite.pages.config.ts",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
+    "test": "npm run build && npm run build:pages && node --test tests/rendered-html.test.mjs",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern pages-dist"
   },
   "dependencies": {
-    "next": "16.2.6",
+    "next": "16.2.12",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },

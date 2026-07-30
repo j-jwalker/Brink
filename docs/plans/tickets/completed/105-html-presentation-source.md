@@ -19,9 +19,9 @@ the deployed result but could not edit the source through the shared Brink workf
 
 ## Summary
 
-Add the complete editable HTML deck under `docs/presentation/html/`, keep its production hosting
-identity and credentials out of the repository, and document how teammates can run, edit, test, and
-submit presentation changes.
+Add the complete editable HTML deck under `docs/presentation/html/`, publish it through GitHub
+Pages without repository credentials, and document how teammates can run, edit, test, and submit
+presentation changes.
 
 ## Scope
 
@@ -29,20 +29,21 @@ submit presentation changes.
 
 - Presentation source, styles, screenshots, tests, and local build configuration.
 - A practical editing guide covering slide copy, notes, layout, screenshots, validation, and PRs.
-- A clear warning that GitHub changes do not automatically publish to the existing hosted URL.
+- A GitHub Actions workflow that publishes a static build to GitHub Pages.
 
 ### Out of scope
 
 - Changing the presentation content or visual design.
-- Adding an automatic public deployment from GitHub.
 - Committing production hosting identifiers, tokens, or other credentials.
 
 ## Validation
 
 - [x] `npm install` succeeds from `docs/presentation/html/`.
 - [x] `npm test` builds the presentation and passes the rendered-page tests.
+- [x] `npm run build:pages` creates a static presentation with its screenshots.
 - [x] The hosting configuration contains no production project ID or credential.
 
 ## Outcome
 
-The team can now edit the presentation through the same branch-and-PR workflow as the rest of Brink.
+The team can now edit the presentation through the same branch-and-PR workflow as the rest of Brink,
+and GitHub Pages provides a public version at <https://brinkmusic.github.io/Brink/>.

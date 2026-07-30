@@ -72,3 +72,14 @@ test("keeps presentation controls, notes, and fallbacks in the shipped source", 
   await access(new URL("../public/screenshots/Feed-brink.png", import.meta.url));
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
 });
+
+test("builds a static GitHub Pages presentation with its screenshots", async () => {
+  const html = await readFile(new URL("../pages-dist/index.html", import.meta.url), "utf8");
+
+  assert.match(html, /<title>Brink — Final Project Presentation<\/title>/i);
+  assert.match(html, /https:\/\/brinkmusic\.github\.io\/Brink\/og\.png/);
+  assert.match(html, /\/Brink\/assets\/[^"]+\.js/);
+
+  await access(new URL("../pages-dist/og.png", import.meta.url));
+  await access(new URL("../pages-dist/screenshots/Feed-brink.png", import.meta.url));
+});

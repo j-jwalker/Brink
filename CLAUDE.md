@@ -35,7 +35,8 @@ job (GitHub Actions cron).
 The frontend is the Jinja/HTMX pages under `backend/app/` above.)*
 - `docs/plans/` â€” spec + tickets (source of truth above).
 - `docs/presentation/` â€” final-project presentation assets. The current editable browser deck is
-  in `docs/presentation/html/`; its README explains local editing, validation, and PR workflow.
+  in `docs/presentation/html/`; its README explains local editing, validation, PR workflow, and
+  GitHub Pages publishing at <https://brinkmusic.github.io/Brink/>.
 
 ## Commands
 

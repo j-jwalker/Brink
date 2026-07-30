@@ -4,5 +4,6 @@ dist/
 .vinext/
 .wrangler/
 coverage/
+pages-dist/
 *.log
 .env*

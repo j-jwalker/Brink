@@ -68,7 +68,7 @@ Product screenshots live in [`public/screenshots/`](public/screenshots/).
 To replace one:
 
 1. Keep the same filename and overwrite the image; or
-2. Add a new image and update its `/screenshots/<filename>` reference in `app/page.tsx`.
+2. Add a new image and update its `screenshots/<filename>` reference in `app/page.tsx`.
 
 Do not commit screenshots containing secrets, private account information, or access tokens.
 
@@ -100,9 +100,16 @@ work by slide so the same sections of `app/page.tsx` are not edited in parallel.
 
 ## Publishing
 
-Pushing a change to GitHub does **not** automatically update the existing hosted presentation.
-The repository is the shared editing source. After a pull request is merged, the presentation owner
-must publish that committed version to the existing hosting project.
+The public presentation is published at:
 
-The hosting file in this folder deliberately contains no production project ID or credentials.
-Never commit hosting tokens or replace it with a private local hosting configuration.
+<https://brinkmusic.github.io/Brink/>
+
+GitHub Actions rebuilds and publishes the deck when presentation changes are pushed to the
+presentation branch, `develop`, or `main`. The deployable static build can also be checked locally:
+
+```powershell
+npm run build:pages
+```
+
+The previous `chatgpt.site` deployment is a separate private hosting project. GitHub Pages is the
+shared public version and requires no hosting credentials in the repository.

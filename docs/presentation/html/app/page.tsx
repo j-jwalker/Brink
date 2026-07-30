@@ -278,7 +278,7 @@ function SlideContent({ slide }: { slide: Slide }) {
       return (
         <div className="image-split">
           <div className="screen-frame feed-frame">
-            <img src="/screenshots/Feed-brink.png" alt="Brink social feed with song posts, reactions, and comments" />
+            <img src="screenshots/Feed-brink.png" alt="Brink social feed with song posts, reactions, and comments" />
           </div>
           <div className="feature-list">
             <p><b>For listeners</b><span>What you play becomes a lasting identity, a social feed, and a way to find people with similar taste.</span></p>
@@ -433,7 +433,7 @@ function SlideContent({ slide }: { slide: Slide }) {
             <section><span>ON PROFILE LOAD</span><h3>Apply the saved model</h3><p>Current plays + posts → taste vector → nearest community</p><small>Two vectors → cosine similarity → compatibility</small></section>
           </div>
           <div className="screen-frame analytics-frame">
-            <img src="/screenshots/analytics-brink.png" alt="Brink analytics page showing seven taste communities and model quality" />
+            <img src="screenshots/analytics-brink.png" alt="Brink analytics page showing seven taste communities and model quality" />
           </div>
         </div>
       );
@@ -462,7 +462,7 @@ function SlideContent({ slide }: { slide: Slide }) {
     case "frontend":
       return (
         <div className="frontend-collage">
-          <div className="collage-main screen-frame"><img src="/screenshots/Landing-brink.png" alt="Brink landing page" /></div>
+          <div className="collage-main screen-frame"><img src="screenshots/Landing-brink.png" alt="Brink landing page" /></div>
           <div className="page-index">
             <span>Landing</span><span>Feed</span><span>Profile</span><span>Artist studio</span><span>Analytics</span>
           </div>
@@ -472,7 +472,7 @@ function SlideContent({ slide }: { slide: Slide }) {
     case "details":
       return (
         <div className="detail-layout">
-          <div className="screen-frame profile-frame"><img src="/screenshots/Profile-brink.png" alt="Brink profile with listening history and compatibility" /></div>
+          <div className="screen-frame profile-frame"><img src="screenshots/Profile-brink.png" alt="Brink profile with listening history and compatibility" /></div>
           <div className="detail-copy">
             <p><b>Play in place</b><span>Spotify player opens inside a feed card.</span></p>
             <p><b>Share what is playing</b><span>One action fills the existing composer.</span></p>
@@ -526,11 +526,11 @@ function SlideContent({ slide }: { slide: Slide }) {
 
 function ScreenshotBackup() {
   const items = useMemo(() => [
-    ["Landing", "/screenshots/Landing-brink.png"],
-    ["Feed", "/screenshots/Feed-brink.png"],
-    ["Profile", "/screenshots/Profile-brink.png"],
-    ["Artist studio", "/screenshots/artist-brink.png"],
-    ["Analytics", "/screenshots/analytics-brink.png"],
+    ["Landing", "screenshots/Landing-brink.png"],
+    ["Feed", "screenshots/Feed-brink.png"],
+    ["Profile", "screenshots/Profile-brink.png"],
+    ["Artist studio", "screenshots/artist-brink.png"],
+    ["Analytics", "screenshots/analytics-brink.png"],
   ], []);
   const [active, setActive] = useState(0);
   return (

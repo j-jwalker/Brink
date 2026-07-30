@@ -11,3 +11,4 @@ Start with [`html/README.md`](html/README.md) when changing slides or speaker no
 
 The HTML presentation is intentionally stored with its source and screenshots so every team member
 can run it locally, make changes on a branch, and submit those changes through a normal pull request.
+The latest published version is available at <https://brinkmusic.github.io/Brink/>.
