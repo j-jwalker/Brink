@@ -908,8 +908,23 @@ textarea.composer-caption { resize: vertical; min-height: 2.75rem; }
 .dna-val { font-size: 0.78rem; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 560px) { .dna-row { grid-template-columns: 6rem 1fr 1.8rem; } }
 
-/* "Which tribe are you" teaser */
+/* "Which tribe are you" teaser (shown only when we can't place the viewer yet) */
 .an-teaser { border: 1px dashed var(--line); background: transparent; }
+
+/* "Which tribe are you in?" — the viewer's own tribe (T106). A left accent stripe in that tribe's
+   colour (--tribe, set inline) ties the card to its community on the leaderboard above. */
+.you-card { border-left: 3px solid var(--tribe, var(--accent)); }
+.you-headline { margin: 0.15rem 0 0.15rem; font-size: 1.25rem; font-weight: 700; }
+.you-tribe { font-weight: 800; }
+.you-sub { margin: 0; color: var(--mute); font-size: 0.9rem; }
+.you-sub b { color: var(--text); }
+.you-coverage { margin: 0.35rem 0 0; font-size: 0.82rem; }
+
+/* "The sound of Brink" bars (T106): the plain .dna-fill has no colour of its own, so the whole-app
+   summary bars get Brink's lavender→pink gradient (the per-tribe bars set their own colour inline). */
+.sound-fill { background: linear-gradient(90deg, var(--accent), var(--hot)); }
+/* small sub-line under a card label (e.g. the sound-of-Brink explainer). */
+.an-card-sub { margin: 0.1rem 0 0.75rem; color: var(--mute); font-size: 0.9rem; line-height: 1.45; }
 
 /* Popularity + shared bits */
 .stat-row { display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 0 0 0.75rem; }
