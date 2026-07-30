@@ -372,12 +372,30 @@ textarea.composer-caption { resize: vertical; min-height: 2.75rem; }
 .artist-status { margin: 0; color: var(--mute); font-size: 0.8rem; min-height: 1rem; }
 .artist-post { display: grid; gap: 0.5rem; }
 .artist-post-img { width: 100%; border-radius: 0.75rem; display: block; }
-/* T103: placeholder shown when an artist image can't be signed (blank URL) — a muted box so the
-   card stays intact instead of showing a broken <img> or crashing the page. */
+/* T103: placeholder shown when an artist image can't be signed (blank URL) — instead of a broken
+   <img> or a crash, we show a last-resort MUSIC graphic so the card still looks intentional and
+   on-brand. It's a vinyl record centered on a soft lavender→pink brand wash (the SVG is inlined as a
+   data: URI so there's no extra network request — which matters, since we're here precisely because
+   the network couldn't fetch the real image). The "%23" bits are just URL-encoded "#" for the hex
+   colours; the vinyl is drawn as nested circles (grooves) with a lavender centre label. */
 .artist-post-img-missing {
   aspect-ratio: 16 / 9;
-  background: var(--ink);
-  border: 1px dashed var(--line);
+  display: flex;
+  align-items: flex-end;      /* the caption sits along the bottom edge */
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='34' fill='%230b0b12' stroke='%2326263a'/%3E%3Ccircle cx='50' cy='50' r='27' fill='none' stroke='%232c2c46' stroke-width='0.7'/%3E%3Ccircle cx='50' cy='50' r='21' fill='none' stroke='%232c2c46' stroke-width='0.7'/%3E%3Ccircle cx='50' cy='50' r='15' fill='none' stroke='%232c2c46' stroke-width='0.7'/%3E%3Ccircle cx='50' cy='50' r='10' fill='%239d8df1'/%3E%3Ccircle cx='50' cy='50' r='2' fill='%230b0b12'/%3E%3C/svg%3E")
+      center 34% / auto 60% no-repeat,
+    radial-gradient(120% 95% at 50% 25%, rgba(157, 141, 241, 0.20), rgba(244, 114, 182, 0.10) 55%, var(--ink) 100%);
+}
+/* a small, honest caption under the vinyl so the fallback reads as deliberate, not as an error. */
+.artist-post-img-missing::after {
+  content: "🎵 artwork tuning in";
+  margin-bottom: 0.7rem;
+  font-size: 0.8rem;
+  color: var(--mute);
 }
 .artist-post-caption { margin: 0; font-size: 0.95rem; }
 /* T104: a text-only artist post (no photo) gets the same distinct "note" look as user notes —
@@ -908,8 +926,23 @@ textarea.composer-caption { resize: vertical; min-height: 2.75rem; }
 .dna-val { font-size: 0.78rem; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 560px) { .dna-row { grid-template-columns: 6rem 1fr 1.8rem; } }
 
-/* "Which tribe are you" teaser */
+/* "Which tribe are you" teaser (shown only when we can't place the viewer yet) */
 .an-teaser { border: 1px dashed var(--line); background: transparent; }
+
+/* "Which tribe are you in?" — the viewer's own tribe (T106). A left accent stripe in that tribe's
+   colour (--tribe, set inline) ties the card to its community on the leaderboard above. */
+.you-card { border-left: 3px solid var(--tribe, var(--accent)); }
+.you-headline { margin: 0.15rem 0 0.15rem; font-size: 1.25rem; font-weight: 700; }
+.you-tribe { font-weight: 800; }
+.you-sub { margin: 0; color: var(--mute); font-size: 0.9rem; }
+.you-sub b { color: var(--text); }
+.you-coverage { margin: 0.35rem 0 0; font-size: 0.82rem; }
+
+/* "The sound of Brink" bars (T106): the plain .dna-fill has no colour of its own, so the whole-app
+   summary bars get Brink's lavender→pink gradient (the per-tribe bars set their own colour inline). */
+.sound-fill { background: linear-gradient(90deg, var(--accent), var(--hot)); }
+/* small sub-line under a card label (e.g. the sound-of-Brink explainer). */
+.an-card-sub { margin: 0.1rem 0 0.75rem; color: var(--mute); font-size: 0.9rem; line-height: 1.45; }
 
 /* Popularity + shared bits */
 .stat-row { display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 0 0 0.75rem; }
