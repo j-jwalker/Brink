@@ -34,6 +34,9 @@ job (GitHub Actions cron).
 *(The `apps/web/` React/Vite SPA was retired in T60 â€” [ADR-0013](docs/decisions/adr/0013-python-frontend.md).
 The frontend is the Jinja/HTMX pages under `backend/app/` above.)*
 - `docs/plans/` â€” spec + tickets (source of truth above).
+- `docs/presentation/` â€” final-project presentation assets. The current editable browser deck is
+  in `docs/presentation/html/`; its README explains local editing, validation, PR workflow, and
+  GitHub Pages publishing at <https://brinkmusic.github.io/Brink/>.
 
 ## Commands
 

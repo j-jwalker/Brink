@@ -1,0 +1,59 @@
+name: Publish presentation to GitHub Pages
+
+on:
+  push:
+    branches:
+      - docs/T105-html-presentation
+      - develop
+      - main
+    paths:
+      - "docs/presentation/html/**"
+      - ".github/workflows/presentation-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/presentation/html
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: docs/presentation/html/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static presentation
+        run: npm run build:pages
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload presentation
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/presentation/html/pages-dist
+
+      - name: Deploy presentation
+        id: deployment
+        uses: actions/deploy-pages@v4
