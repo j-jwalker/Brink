@@ -72,14 +72,45 @@
       {% endfor %}
     </div>
 
-    {# ---- "Which tribe are YOU in?" — per-listener matching arrives later (T33) ---- #}
+    {# ---- "Which tribe are YOU in?" — the signed-in viewer's real spot on the map (T106) ----
+       a.you comes from _viewer_tribe: the SAME on-read cluster assignment used on profiles (T33).
+       Three states: we found your tribe (show it), or we can't place you yet (need more listening),
+       or the model isn't trained (page still renders — everything degrades to null, never a crash). #}
+    {% if a.you and a.you.community %}
+    <div class="card you-card" style="--tribe: {{ a.you.community.color }}">
+      <p class="card-label">Which tribe are you in?</p>
+      <p class="you-headline">
+        You're in <span class="you-tribe" style="color: {{ a.you.community.color }}">{{ a.you.community.label }}</span>.
+      </p>
+      <p class="you-sub">
+        That's <b>#{{ a.you.community.rank }}</b> of {{ a.kmeans.k }} tribes ·
+        {{ a.you.community.share_pct }}% of Brink listens like you.
+      </p>
+      {% if a.you.coverage_pct is not none %}
+      <p class="muted you-coverage">Matched from {{ a.you.coverage_pct }}% of your tracks we recognized. 🎧</p>
+      {% endif %}
+      {% if a.you.community.features %}
+      <p class="dna-title">Your tribe's audio DNA</p>
+      <div class="dna">
+        {% for f in a.you.community.features %}
+        <div class="dna-row">
+          <span class="dna-label">{{ f.name | capitalize }}</span>
+          <span class="dna-bar"><span class="dna-fill" style="--fill: {{ f.pct }}%; background: {{ a.you.community.color }}"></span></span>
+          <span class="dna-val">{{ f.pct }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
     <div class="card an-teaser">
       <p class="card-label">Which tribe are you in?</p>
       <p class="analytics-pending">
-        We'll pin you to your tribe (and show who you match with) once per-listener matching goes
-        live. Your spot on the map is coming. 🔮
+        We need a little more listening from you before we can place you on the map. Play a few more
+        songs and check back — your spot is waiting. 🔮
       </p>
     </div>
+    {% endif %}
   {% else %}
     <div class="card">
       <p class="card-label">Taste communities</p>
@@ -87,31 +118,30 @@
     </div>
   {% endif %}
 
-  {# ---- 5. What makes a song popular (auto-fills when T36 lands) ---- #}
+  {# ---- 5. The sound of Brink (T106) ----
+     Replaces the old "what makes a song popular" card. That needed a second (popularity) model,
+     which was cut because no dataset supports it (ADR-0016). Instead we show a real, finished
+     insight from the model we DO have: the audio traits that define the whole listener base,
+     averaged across every tribe's audio DNA (computed in _analytics_data as `a.sound`). #}
+  {% if a.sound %}
   <div class="card">
-    <p class="card-label">What makes a song popular?</p>
-    {% if a.popularity %}
-      <p class="stat-row">
-        {% if a.popularity.r2 is not none %}<span class="stat"><b>{{ '%.3f' | format(a.popularity.r2) }}</b> R²</span>{% endif %}
-        {% if a.popularity.rmse is not none %}<span class="stat"><b>{{ '%.2f' | format(a.popularity.rmse) }}</b> RMSE</span>{% endif %}
-      </p>
-      {% if a.popularity.feature_importances is mapping and a.popularity.feature_importances %}
-      <p class="dna-title">Biggest drivers</p>
-      <div class="dna">
-        {% for name, weight in a.popularity.feature_importances.items() %}
-        <div class="dna-row">
-          <span class="dna-label">{{ name | capitalize }}</span>
-          <span class="dna-bar"><span class="dna-fill" style="--fill: {{ [ (weight * 100) | abs | round | int, 100 ] | min }}%"></span></span>
-        </div>
-        {% endfor %}
+    <p class="card-label">🎧 The sound of Brink</p>
+    <p class="an-card-sub">Across all {{ a.kmeans.k }} tribes, these are the traits that define what we listen to.</p>
+    <div class="dna">
+      {% for f in a.sound %}
+      <div class="dna-row">
+        <span class="dna-label">{{ f.name | capitalize }}</span>
+        <span class="dna-bar"><span class="dna-fill sound-fill" style="--fill: {{ f.pct }}%"></span></span>
+        <span class="dna-val">{{ f.pct }}</span>
       </div>
-      {% endif %}
-    {% else %}
-      <p class="analytics-pending">
-        Coming soon: once the popularity model is trained, this shows exactly which sounds push a
-        song up the charts. It fills in on its own the moment it does. 🔮
-      </p>
-    {% endif %}
+      {% endfor %}
+    </div>
   </div>
+  {% else %}
+  <div class="card">
+    <p class="card-label">🎧 The sound of Brink</p>
+    <p class="analytics-pending">The sound of Brink shows up here once the clustering model has run. 🎶</p>
+  </div>
+  {% endif %}
 </section>
 {% endblock %}

@@ -1,5 +1,5 @@
 ---
-status: Backlog
+status: Completed
 priority: High
 complexity: Medium
 category: Feature
@@ -73,11 +73,38 @@ SQLModel/SQLAlchemy group-by. **There is no standalone T37.**
 | `backend/tests/test_profile.py` | CREATE | profile + empty-state tests |
 
 ## Testing Checklist
-- [ ] profile with no plays → zeroed stats, null cluster/compat, 200 (not 500)
-- [ ] with seeded plays → correct top tracks/genres, streak, 30-day total
-- [ ] cluster label present when `ModelArtifact` exists
-- [ ] compatibility computed vs the authenticated viewer
-- [ ] follower/following counts correct
+- [x] profile with no plays → zeroed stats, null cluster/compat, 200 (not 500) — `test_profile_page_ok_without_analytics`, `test_profile_data_null_analytics_without_model`
+- [x] with seeded plays → correct top tracks, streak, 30-day total — covered by T44 (`test_stats.py`); genres N/A, see Outcome
+- [x] cluster label present when `ModelArtifact` exists — `test_profile_data_surfaces_cluster_and_compatibility`, `test_profile_page_renders_taste_block`
+- [x] compatibility computed vs the authenticated viewer (and hidden on your own profile) — `test_compatibility_hidden_on_own_profile`
+- [x] follower/following counts correct — shipped in T44 (`_profile_data`)
+
+## Outcome (as built, 2026-07-28)
+The analytics half of the profile — **taste cluster label + compatibility vs the viewer** — now
+renders on the existing `/u/{handle}` page (no new router or JSON endpoint; ADR-0013 makes the page
+and API one app, so this reuses `_profile_data` + `profile.html` rather than adding a parallel
+surface). Wiring only — the maths already existed:
+
+- `backend/app/routers/pages.py` — `_profile_data` calls the T33 `assign_cluster` and T35
+  `compatibility` inference helpers on read, exposing `taste_cluster` (`{id,label}` or `None`) and
+  `compatibility` (`0..1` or `None`). **Compatibility is skipped on your own profile** (`is_self`) —
+  comparing your taste to your own is trivially ~100% and meaningless.
+- `backend/app/templates/profile.html` — a "Taste" card, shown only when there's something to show.
+  **No new CSS** (reuses existing `.card`/`.section-title`; avoids a cache-version bump that would
+  collide with in-flight PR #188). Visual polish is a Sebastian follow-up.
+- `backend/tests/test_profile.py` — new; 5 tests covering the null path (never 500 without a model),
+  the populated path via monkeypatched inference, and the own-profile compatibility guard.
+
+**Deliberate scope call — genres dropped.** The In-Scope line mentioned "top genres," but there is
+**no genre field anywhere** — no `genre` column on `Track`/`User`, and neither Kaggle CSV carries
+one (the same gap documented in T32, T33's `taste_vector.py` header, and ADR-0004). Genres are not
+buildable without a new data source, so they are omitted rather than faked. AN-6 (if it tracked
+genres) stays unshipped for that reason.
+
+**Graceful empties are free.** `assign_cluster`/`compatibility` already wrap everything in
+try/except that returns null when the `gold` schema or `ModelArtifact` is absent (local dev, or
+before the nightly job runs), so the "always 200, never 500" requirement holds by construction. Full
+suite: 322 passing.
 
 ## Readiness Checklist
 - [x] Summary is specific and actionable

@@ -24,7 +24,7 @@ The catalog of requirement IDs (`AUTH-*`, `BE-*`, …) and the **requirement →
 | BE-5 | `POST/DELETE /api/posts/:id/reactions` — server-deduped toggle. | T11 | ✅ |
 | BE-6 | `POST/GET /api/posts/:id/comments`. | T12 | ✅ |
 | BE-7 | `POST/DELETE /api/follow/:userId` — feed respects the graph. | T13 | ✅ |
-| BE-8 | `GET /api/users/:id/profile` — stats + cluster + compatibility. | T14 | ◻ |
+| BE-8 | `GET /api/users/:id/profile` — stats + cluster + compatibility. *(served on the `/u/{handle}` page, not a separate JSON route — ADR-0013 makes the page and API one app)* | T44, T14 | ✅ (stats via T44; **cluster + compatibility** surfaced on read by T14, degrading to null when no model is trained) |
 | BE-9 | `POST /api/artist/posts` — create BTS post + optional track. | T50 | ✅ |
 | BE-10 | All mutations: session-gated, validated, consistent error JSON. | every API ticket (ADR-0007) | ◻ |
 | BE-11 | Connection pooling (Supabase pooler) configured. | T01, T05 | ✅ |
@@ -42,13 +42,13 @@ The catalog of requirement IDs (`AUTH-*`, `BE-*`, …) and the **requirement →
 | ID | Acceptance | Ticket(s) | Status |
 |----|------------|-----------|--------|
 | AN-1 | Ingest Kaggle audio features into a `Track`-joinable form; record coverage. | T31 | ✅ |
-| AN-2 † | Per-user taste vector (standardized) + C4 genre fallback. *(now computed on read, no table)* | T33 | ◻ |
+| AN-2 † | Per-user taste vector (standardized) + C4 genre fallback. *(now computed on read, no table)* | T33 | ✅ fallback is a corpus-mean vector, not literally "genre" (disclosed — neither Kaggle file has a genre field; see T33 Outcome) |
 | AN-3 | K-means on Kaggle tracks; k via elbow+silhouette; persist `Cluster` + metrics. | T34 | ✅ k forced to 7 (disclosed — silhouette preferred k=2; see T34 Outcome) |
-| AN-4 † | Assign each user to nearest cluster. *(computed on read in the Python API; `User.clusterId` dropped)* | T33, T14 | ◻ |
-| AN-5 † | Compatibility = cosine of full taste vectors. *(computed on read in the Python API; no pairwise table)* | T35 | ◻ |
-| AN-6 | Popularity regression; persist R²/RMSE/feature-importances. | T36 | ◻ |
-| AN-7 † | Aggregations: top tracks/genres/artists, streak, 30-day totals. *(computed live in the Python API, no `UserStats` table)* | T44, T14, T102 | ◧ (T44: top **tracks/artists**, streak, 30-day totals done live over `Play` in `app/stats.py`; T102 adds a batched per-(author, track) play count on feed cards over the same `Play` data; top **genres** still deferred to T14, needs the T31 Kaggle genre join) |
-| AN-8 | Pipeline idempotent + re-runnable; logs coverage/k/silhouette/R²/RMSE. | T30, T38 | ◻ |
+| AN-4 † | Assign each user to nearest cluster. *(computed on read in the Python API; `User.clusterId` dropped)* | T33, T14 | ✅ (T33 computes the on-read nearest-`Cluster` assignment; **T14 surfaces it** as the "Taste community" label on the profile) |
+| AN-5 † | Compatibility = cosine of full taste vectors. *(computed on read in the Python API; no pairwise table)* | T35, T14 | ✅ (T35 computes `cosine()`/`compatibility()` over T33's taste vectors; **T14 surfaces it** as the "% compatible with your taste" line, shown only vs a different viewer) |
+| AN-6 † | Popularity regression; persist R²/RMSE/feature-importances. | T36 | **Cut** — no dataset supports a defensible popularity regression, and popularity itself isn't a stable regression target (see [ADR-0016](../decisions/adr/0016-cut-second-regression-model.md)); the second/regression model is not being built |
+| AN-7 † | Aggregations: top tracks/genres/artists, streak, 30-day totals. *(computed live in the Python API, no `UserStats` table)* | T44, T102 | ◧ (T44: top **tracks/artists**, streak, 30-day totals done live over `Play` in `app/stats.py`; T102 adds a batched per-(author, track) play count on feed cards over the same `Play` data; top **genres cut** — there is no genre field anywhere (no `Track.genre`; neither Kaggle CSV carries one — same gap as AN-2/T32/ADR-0004), so it's not buildable without a new data source. Investigated and dropped in T14) |
+| AN-8 † | Pipeline idempotent + re-runnable; logs coverage/k/silhouette/R²/RMSE. | T30, T38 | ✅ no R²/RMSE — T36 (the regression model) was cut entirely (ADR-0016); `run_pipeline.py` orchestrates ingest + cluster, each independently idempotent, logging coverage/k/silhouette |
 | AN-9 † | Analytics UI on real model data; no hardcoded constants. *(reads metrics/clusters + on-read values)* | T45 | ◧ (T45: analytics page reads real `ModelMetrics`/`Cluster` with **no** hardcoded numbers; the K-means/community half is live, and the popularity half fills in automatically when **T36** writes `ModelMetrics("popularity_regression")`) |
 
 ## Layer 5 — Frontend / UX-UI (UI)
@@ -83,7 +83,7 @@ The catalog of requirement IDs (`AUTH-*`, `BE-*`, …) and the **requirement →
 | INFRA-1 † | Vercel project: SPA + `/api/*` rewrite to Render; env vars set, no secrets in repo. | T01, T07 | ✅ |
 | INFRA-2 | Supabase provisioned; pooled URLs; migrations in CI; Data API disabled. | T01 | ✅ |
 | INFRA-3 † | Snapshot trigger on a fixed cadence. *(GitHub Actions, not Vercel Cron)* | T21 | ✅ |
-| INFRA-4 | GitHub Actions runs the Python pipeline against Supabase. | T30, T38 | ◻ |
+| INFRA-4 | GitHub Actions runs the Python pipeline against Supabase. | T30, T38 | ✅ `.github/workflows/analytics.yml`, nightly + `workflow_dispatch`, `DATABASE_URL` secret |
 | INFRA-5 | Secret hygiene: `.gitignore` enforced; secrets in env only. | T00 | ✅ |
 
 ## Layer 8 — Data Sources & Seeding (DATA)
@@ -114,6 +114,8 @@ The catalog of requirement IDs (`AUTH-*`, `BE-*`, …) and the **requirement →
 The old `brink-spec-design.md` is **retired**; these acceptance criteria (flagged † above) evolved after it was written — defer to the ADRs:
 - **INFRA-1** — original spec assumed Vercel serverless (`api/`) as the backend. ADR-0010 moved the API to FastAPI on Render; then **T60 retired the Vercel SPA entirely** ([ADR-0013](../decisions/adr/0013-python-frontend.md)), so **Render now serves both the API and the Jinja frontend** — Vercel is no longer used ([ADR-0010](../decisions/adr/0010-fastapi-render-backend.md)).
 - **AN-2/4/5/7/9** — per-user analytics are computed **on read in the API** (written when the backend was TypeScript; since ADR-0010 that means the FastAPI/Python app), not materialized; `UserStats`/`TasteVector`/`Compatibility` tables and `User.clusterId` are dropped, `ModelArtifact` added ([ADR-0003](../decisions/adr/0003-analytics-runtime.md), [ADR-0009](../decisions/adr/0009-medallion-layering.md)).
+- **AN-6** — the second/regression model is **cut**, not built: no Kaggle dataset supports a defensible popularity regression (the training corpus has no popularity column; the only file that does is frozen at April 2019; the real DB overlap is 67 rows), and popularity itself isn't a stable regression target ([ADR-0016](../decisions/adr/0016-cut-second-regression-model.md)).
+- **AN-8** — no R²/RMSE logging: those were the cut regression model's metrics (ADR-0016). `analytics/run_pipeline.py` logs coverage/k/silhouette from the ingest + cluster stages it actually orchestrates.
 - **SP-2 / INFRA-3** — snapshot is triggered by **GitHub Actions**, not Vercel Cron ([ADR-0006](../decisions/adr/0006-scheduling.md)).
 - **AUTH-3** — the front door is **email + password** (not the spec's magic-link/OTP), server-side per [ADR-0015](../decisions/adr/0015-email-password-auth.md); the handle stays **auto-derived** (no custom-handle field on the signup form).
 - Storage is **Supabase Storage** (not Cloudinary); Kaggle set is a genuine ~1M-track source (not `maharshipandya`) ([ADR-0002](../decisions/adr/0002-api-and-persistence.md), [ADR-0004](../decisions/adr/0004-analytics-data-strategy.md)).

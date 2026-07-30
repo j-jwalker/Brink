@@ -1,5 +1,5 @@
 ---
-status: Backlog
+status: Completed
 priority: Medium
 complexity: Low
 category: Feature
@@ -48,10 +48,10 @@ The draft's T35 was a **Python** `compat.py` writing a pairwise `Compatibility` 
 | `backend/tests/test_compatibility.py` | CREATE | tests |
 
 ## Testing Checklist
-- [ ] identical vectors → 1.0
-- [ ] orthogonal vectors → 0.0
-- [ ] symmetric: compat(A,B) == compat(B,A)
-- [ ] a user with no taste vector → null, not a crash
+- [x] identical vectors → 1.0
+- [x] orthogonal vectors → 0.0
+- [x] symmetric: compat(A,B) == compat(B,A)
+- [x] a user with no taste vector → null, not a crash
 
 ## Readiness Checklist
 - [x] Summary is specific and actionable
@@ -62,3 +62,26 @@ The draft's T35 was a **Python** `compat.py` writing a pairwise `Compatibility` 
 
 ## Notes
 Branch off `develop` as `feat/T35-compatibility`; one PR back into `develop` (never `main`). Owner: Andrea.
+
+## Outcome (as built)
+
+**`backend/app/inference/compatibility.py`** — `cosine(vector_a, vector_b)` is the raw formula,
+rounded to 6 decimal places before clamping to 0..1 (floating-point error can otherwise push an
+identical pair to `0.9999999999999999` instead of a clean `1.0`; a zero-magnitude vector returns 0
+instead of dividing by zero). `compatibility(session, user_a_id, user_b_id)` loads
+`ModelArtifact("kmeans")` **once** and calls T33's `build_taste_vector` for both users with the
+same `feature_order`/`scaler_mean`, so both vectors always come from the same feature space before
+comparing (the ticket's stated correctness requirement) — then delegates the null-propagation to
+`compatibility_from_vectors(vector_a_result, vector_b_result)`, a pure function that returns `None`
+if either side has no taste vector. `compatibility()` itself degrades to `None` (never raises) when
+the trained model or the gold schema isn't available, same pattern as T33's `assign_cluster`.
+
+**Tests (`backend/tests/test_compatibility.py`, 8 tests):** `cosine`/`compatibility_from_vectors`
+are pure-function tests (no DB). `compatibility()`'s graceful-degradation path is tested against
+`db_session`, where `ModelArtifact`'s Postgres-only `JSONB` table is genuinely absent — same
+approach and same reason as T33's `assign_cluster` tests. Manually verified symmetry
+(`compat(A,B) == compat(B,A)`) against `brink-dev`'s real users. **Observed (disclosed, not a
+bug):** at today's ~24% Kaggle-match coverage, most real users' compatibility scores land very
+close to 1.0, since users with mostly-unmatched tracks share the same corpus-mean fallback vector
+(T33) — an honest consequence of current data sparsity, not a defect in the cosine math itself; it
+should self-correct as match coverage grows. Full backend suite: **317 passed.**

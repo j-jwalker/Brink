@@ -26,6 +26,8 @@ from sqlmodel import Session, select
 from app import spotify
 from app.db import get_session
 from app.deps import AuthError, require_user
+from app.inference.assign import assign_cluster
+from app.inference.compatibility import compatibility
 from app.models import (
     ArtistComment,
     ArtistPost,
@@ -387,6 +389,16 @@ def _profile_data(
         for r in summary["recent"]
     ]
 
+    # The analytics layer (T14): which taste "community" (gold.Cluster) this person's listening
+    # puts them in, and — when you're looking at SOMEONE ELSE — how compatible your two tastes are.
+    # Both are computed on read by the T33/T35 inference core, which already degrades to null (never
+    # raises) when no model has been trained yet or the gold schema isn't present (e.g. local dev),
+    # so a profile always renders. WHY compatibility only vs a different viewer: comparing your taste
+    # to your own is trivially ~100% and meaningless, so we skip it (and its work) on your own page.
+    is_self = person.id == viewer_id
+    taste_cluster = assign_cluster(session, person.id)["cluster"]
+    compat = None if is_self else compatibility(session, viewer_id, person.id)
+
     return {
         "id": person.id,
         "display_name": person.display_name,
@@ -397,7 +409,9 @@ def _profile_data(
         "following_count": following_count,
         "follow_list": _follow_list_items(session, person.id, list_kind),
         "is_following": is_following,
-        "is_self": person.id == viewer_id,  # hide the Follow button on your own profile
+        "is_self": is_self,  # hide the Follow button on your own profile
+        "taste_cluster": taste_cluster,  # {"id","label"} or None when no model (T14)
+        "compatibility": compat,         # 0..1 vs the viewer, or None (self / no model) (T14)
         # Does THIS person have a linked Spotify? Drives the "link Spotify" prompt on your own
         # profile when you haven't connected an account (a handle-only user has no plays to show).
         "has_spotify": person.spotify_id is not None,
@@ -508,11 +522,11 @@ def artist_page(request: Request, session: Session = Depends(get_session)):
 
 
 # Read the analytics the app already computed: the K-means clustering quality + the taste
-# communities (T34), and the popularity-model quality once it's trained (T36). All reads are
-# wrapped so that if the analytics tables aren't there yet (e.g. local dev without the gold
-# schema) or a model hasn't run, the page shows a friendly "not ready yet" instead of crashing.
-# WHY read by model name: T36 writes ModelMetrics("popularity_regression") into the SAME store,
-# so its numbers appear here automatically the moment it lands — no code change (T45).
+# communities (T34), plus the derived "sound of Brink" summary (T106). All reads are wrapped so
+# that if the analytics tables aren't there yet (e.g. local dev without the gold schema) or the
+# model hasn't run, the page shows a friendly "not ready yet" instead of crashing.
+# NOTE: the old second model (popularity regression, T36) was cut (ADR-0016), so there is no longer
+# a popularity read here — the "sound of Brink" card (T106) took that slot with real cluster data.
 # The 0-1 Spotify audio features shown as a community's "audio DNA" bars — the recognizable ones.
 # (tempo/loudness/mode are on different scales, so they're left out of the 0-100% bar visual.)
 _DNA_FEATURES = [
@@ -544,7 +558,7 @@ def _silhouette_reading(score) -> tuple[int, str]:
 def _analytics_data(session: Session) -> dict:
     # Shape everything the analytics page's visuals need, from the REAL gold tables. All reads are
     # wrapped so a missing model store (e.g. local dev) shows the friendly "not ready" states.
-    data = {"kmeans": None, "communities": [], "total_listeners": 0, "popularity": None}
+    data = {"kmeans": None, "communities": [], "total_listeners": 0, "sound": []}
     try:
         km = session.get(ModelMetrics, "kmeans")
         if km is not None:
@@ -572,6 +586,7 @@ def _analytics_data(session: Session) -> dict:
                 if centroid.get(f) is not None
             ]
             data["communities"].append({
+                "id": c.id,  # so the viewer's assigned cluster (T33) can be matched back to its card
                 "rank": rank + 1,
                 "label": c.label,
                 "size": c.size,
@@ -582,17 +597,46 @@ def _analytics_data(session: Session) -> dict:
                 "features": features,
             })
 
-        # Popularity model quality — present only after T36 trains it (fills in automatically).
-        pop = session.get(ModelMetrics, "popularity_regression")
-        if pop is not None:
-            data["popularity"] = {
-                "r2": pop.r2,
-                "rmse": pop.rmse,
-                "feature_importances": pop.feature_importances or {},
-            }
+        # "The sound of Brink" (T106): the audio traits that define the whole listener base, as the
+        # average of every community's audio DNA. WHY this replaced the old popularity card: the
+        # second (popularity) model was cut — no dataset supports it (ADR-0016) — so rather than a
+        # permanent "coming soon", we show a real, finished insight built from the clusters we DO
+        # have. It's a plain descriptive summary of the trained model, not a new prediction.
+        sums: dict[str, int] = {}
+        counts: dict[str, int] = {}
+        for community in data["communities"]:
+            for feat in community["features"]:
+                sums[feat["name"]] = sums.get(feat["name"], 0) + feat["pct"]
+                counts[feat["name"]] = counts.get(feat["name"], 0) + 1
+        # mean per feature, biggest first, so the strongest traits lead the card.
+        data["sound"] = sorted(
+            ({"name": name, "pct": round(sums[name] / counts[name])} for name in sums),
+            key=lambda f: f["pct"],
+            reverse=True,
+        )
     except Exception as e:  # noqa: BLE001 — no analytics store yet -> show the "not ready" state
         logger.warning("analytics read failed (model store unavailable): %s", e)
     return data
+
+
+# Where the signed-in viewer lands on the taste map (T106): run the SAME on-read cluster assignment
+# the profile page uses (assign_cluster, T33), then match the result back to the community card
+# already built in _analytics_data so the "Which tribe are you in?" section can reuse that tribe's
+# rank, colour, share and audio DNA. Returns a dict the template renders in three states:
+#   - community set   -> "you're in <tribe>" with its stats
+#   - cluster is None  -> not enough listening yet / no model (friendly nudge)
+# `coverage_pct` (0–100, how much of the viewer's listening we could match to the music map) is
+# rounded here for display. assign_cluster never raises — it degrades to a null cluster — so this
+# stays safe even with no gold schema (local dev) or a brand-new user.
+def _viewer_tribe(session: Session, user_id: str, communities: list[dict]) -> dict:
+    result = assign_cluster(session, user_id)
+    cluster = result.get("cluster")
+    coverage = result.get("coverage_pct")
+    coverage_pct = round(coverage) if coverage is not None else None
+    if not cluster:
+        return {"cluster": None, "coverage_pct": coverage_pct, "community": None}
+    match = next((c for c in communities if c["id"] == cluster["id"]), None)
+    return {"cluster": cluster, "coverage_pct": coverage_pct, "community": match}
 
 
 # The analytics page (T45): shows Brink's real model output — the taste communities and model
@@ -609,10 +653,14 @@ def analytics_page(request: Request, session: Session = Depends(get_session)):
     # Log out). Without it the shared nav falls back to its logged-out header even though the
     # visitor is signed in — the whole reason this page looked "logged out" (the analytics
     # content only renders because require_user succeeded above).
+    a = _analytics_data(session)
+    # Add the signed-in viewer's own spot on the map (T106) — computed here, not in _analytics_data,
+    # because it needs the viewer's id (that helper is viewer-agnostic and reused by tests).
+    a["you"] = _viewer_tribe(session, viewer.id, a["communities"])
     page = templates.TemplateResponse(
         request,
         "analytics.html",
-        {"page_title": "Analytics · Brink", "a": _analytics_data(session), "viewer": viewer},
+        {"page_title": "Analytics · Brink", "a": a, "viewer": viewer},
     )
     for key, value in refreshed.raw_headers:
         if key == b"set-cookie":

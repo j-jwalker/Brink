@@ -1,6 +1,7 @@
 # ADR-0004: Analytics data strategy
 
-**Status:** Accepted
+**Status:** Accepted — *C5 (popularity regression) superseded by
+[ADR-0016](0016-cut-second-regression-model.md) (cut, not built); C1–C4 remain in force.*
 **Date:** 2026-06-22
 **First captured as:** spec decision-log rows C1–C5
 

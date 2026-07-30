@@ -240,16 +240,53 @@ agents, not a changelog.
   `T34`'s 7 trained clusters (scoped down from ADR-0004 C3's ~100–200 — disclosed on the ticket,
   not an ADR change), each with its own shared pool of 25 new Kaggle-sourced `Track` rows and
   15–25 `Play` rows spread across 8–15 days; every seeded user's `bio` discloses it as synthetic
-  demo data. On-demand inference `T33` is next; `T14` remains gated on `T33`/`T35`.
+  demo data. `T33` built on-demand inference: `silver.Track` was widened with the 5 remaining
+  kmeans features (migration `ce6e2ca7edac`, additive, applied to `brink-dev`) and
+  `ingest_kaggle.py`'s join + a full re-ingest backfilled them (269 matched tracks, 257 with all 10
+  features present). `backend/app/inference/taste_vector.py` + `assign.py` build a user's taste
+  vector on read and assign their nearest `gold.Cluster`, standardizing with the trained
+  `ModelArtifact("kmeans")`'s scaler — the C4 fallback for an unmatched/incomplete track is the
+  training corpus's own mean vector, not literally "genre" (disclosed; neither Kaggle file has a
+  genre field, same gap `T32` hit). Degrades to a null cluster, never a 500, when the model or gold
+  schema isn't available. `T35` added `backend/app/inference/compatibility.py`: cosine similarity
+  between two users' taste vectors (T33), clamped to 0..1 and rounded to avoid floating-point noise
+  on identical pairs, reusing the same `ModelArtifact` load so both vectors share a feature space —
+  null (never an error) if either side has no taste vector or the model isn't available. At today's
+  ~24% Kaggle-match coverage most real users score near 1.0 (they share T33's corpus-mean fallback
+  for unmatched tracks) — disclosed as a data-sparsity artifact, not a bug. `T14` closed the
+  analytics-to-profile spine: the `/u/{handle}` page now shows a **"Taste community"** cluster label
+  (T33) and, on someone else's profile, a **"% compatible with your taste"** line (T35) — computed on
+  read in `_profile_data`, hidden on your own profile, and degrading to null (never 500) when no
+  model is trained. No new endpoint (ADR-0013: page + API are one app) and no new CSS. Its listed
+  "top genres" were **dropped** — there is no genre field anywhere (no `Track.genre`; neither Kaggle
+  CSV has one, the same gap `T32`/`T33` hit), so it isn't buildable without a new data source
+  (`AN-7` note updated).
 - **Next feature work:** start from `docs/plans/tickets/README.md` before choosing a ticket. The
   Wave 2 music-identity trio (`T100`–`T102`), `T103` signing hardening, and `T104` text-only posts
   are **complete**, as is the 2026-07-22 non-analytics UI hardening wave (`T80`–`T86`) and the
-  social quick-wins wave (`T94`–`T97`). For analytics, `T32` is **complete**; `T33` is unblocked
-  but first needs `Track`'s schema extended with 5 more features — see its ticket; `T14` is still
-  gated. **`T45` (analytics UI) is done**: `/analytics` reads the real gold `ModelMetrics`/`Cluster`
-  (no hardcoded numbers), shows the K-means/community half live, and auto-fills the popularity half
-  the moment `T36` writes `ModelMetrics("popularity_regression")` — no code change (the client-side
-  predict widget is the one deferred piece, pending `T36`'s exported coefficients).
+  social quick-wins wave (`T94`–`T97`). For analytics, `T32`, `T33`, `T35`, `T38`, and now `T14`
+  are **complete** — the analytics-to-profile spine is closed. **`T36` (popularity regression) was cut entirely**
+  ([ADR-0016](docs/decisions/adr/0016-cut-second-regression-model.md)): no dataset supports a
+  defensible popularity regression, and popularity is a live, constantly-recomputed metric anyway —
+  not a stable regression target. **`T38`** built `analytics/run_pipeline.py` (orchestrates T31/T33's
+  ingest + T34's cluster export, nightly at 03:00 UTC + `workflow_dispatch` via
+  `.github/workflows/analytics.yml`) — its CLI entrypoint forces `k=7` so an automated run can never
+  silently regress T32's persona system back to silhouette's preferred `k=2`. The ~1.2M-row Kaggle
+  CSV the pipeline needs is hosted as a GitHub Release asset (`analytics-data-v1`, 346MB) and
+  downloaded fresh each run, since it's gitignored and a runner starts empty; the workflow needs a
+  new `DATABASE_URL` repo secret (added alongside `CRON_SECRET`/`SNAPSHOT_URL`). **`T45` (analytics
+  UI) is done**: `/analytics` reads the real gold `ModelMetrics`/`Cluster` (no hardcoded numbers)
+  and shows the K-means/community half live. **`T106`** finished its two ex-placeholder cards:
+  "Which tribe are you in?" now places the signed-in viewer live via the same on-read
+  `assign_cluster` the profile uses (`_viewer_tribe` in `pages.py`), and the old popularity slot
+  (cut with `T36`, ADR-0016) is replaced by **"The sound of Brink"** — the audio traits defining the
+  whole listener base, computed as the mean of every tribe's audio DNA (`a.sound`), a descriptive
+  summary of the trained clusters, not a new prediction. **With `T14` complete, `docs/plans/tickets/backlog/` is empty** — every planned ticket
+  is done. Everything unbuilt now lives in `docs/plans/tickets/out-of-scope/`: `T36` (cut), `T75`/
+  `T76` (obsoleted by the T60 SPA retirement), and `T99` (the dev/prod DB split, deliberately
+  deferred past the deadline — the shared DB stays a known accepted risk; see Watch-outs). The next
+  steps are release hygiene: a `develop → main` release PR + back-merge, then final QA
+  (`docs/qa-checklist.md`, T61).
 
 ## Watch-outs
 
@@ -272,9 +309,6 @@ agents, not a changelog.
   (`backend/alembic/env.py`); it is harmless and can be dropped later.
 - Render deploys production from `main`, not `develop`. Scheduled GitHub workflows also only run
   from the default branch, so release PRs and back-merges matter.
-- `T34`'s trained `ModelArtifact("kmeans")` uses 10 audio features, but `silver.Track` only has
-  columns for the original 5 (from `T31`). `T33` needs `Track`'s schema + `ingest_kaggle.py`'s join
-  extended with the other 5 before real-user inference can work — see `T33`'s ticket.
 
 ## Deployment topology (ADR-0010, T07, ADR-0013, T60)
 

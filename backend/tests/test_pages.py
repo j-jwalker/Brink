@@ -60,7 +60,7 @@ def test_edit_profile_script_syncs_expanded_state(client):
 def test_home_page_uses_versioned_stylesheet(client):
     app.dependency_overrides[get_session] = lambda: MagicMock()
     body = client.get("/").text
-    assert 'href="/static/brink.css?v=86"' in body
+    assert 'href="/static/brink.css?v=87"' in body
 
 
 # After that one-time cache bust, every static response asks the browser to revalidate before
@@ -1158,9 +1158,12 @@ def test_analytics_page_renders_with_pending_states(client, db_session, monkeypa
     assert res.status_code == 200
     body = res.text
     assert "Taste communities" in body                     # clustering section present (pending state)
-    assert "What makes a song popular?" in body            # popularity section present
+    assert "The sound of Brink" in body                    # T106: replaced the old popularity card
     assert "aren't ready yet" in body                      # clustering pending state
-    assert "once the popularity model is trained" in body  # popularity pending state (fills in at T36)
+    assert "sound of Brink shows up here" in body          # sound-of-Brink pending state (no model yet)
+    # T106: the "Which tribe are you in?" card lives inside the clustering block, so with no model
+    # it correctly does NOT appear — the "Taste communities aren't ready" card covers that state.
+    assert "Which tribe are you in?" not in body
     # Regression guard: a signed-in visitor must get the signed-in nav, not the logged-out
     # header. The route originally forgot to pass `viewer`, so the nav fell back to
     # Features/How it works/Sign in even though the analytics content rendered.
@@ -1169,9 +1172,9 @@ def test_analytics_page_renders_with_pending_states(client, db_session, monkeypa
 
 
 def test_analytics_page_renders_rich_visuals(client, db_session, monkeypatch):
-    # Exercise the POPULATED branch (communities + audio-DNA + popularity) without needing the
-    # gold tables (which SQLite can't build) by faking _analytics_data's output. This catches
-    # template bugs in the rich path that the pending-state test can't reach.
+    # Exercise the POPULATED branch (communities + audio-DNA + the T106 "sound of Brink" card)
+    # without needing the gold tables (which SQLite can't build) by faking _analytics_data's
+    # output. This catches template bugs in the rich path that the pending-state test can't reach.
     _seed_viewer(db_session)
     fake = {
         "kmeans": {"silhouette": 0.16, "k": 2, "silhouette_pct": 16,
@@ -1179,16 +1182,23 @@ def test_analytics_page_renders_rich_visuals(client, db_session, monkeypatch):
         "total_listeners": 1500,
         "total_listeners_display": "1,500",
         "communities": [
-            {"rank": 1, "label": "High Valence, High Danceability", "size": 1000,
+            {"id": "c1", "rank": 1, "label": "High Valence, High Danceability", "size": 1000,
              "size_display": "1,000", "share_pct": 66.7, "bar_pct": 100, "color": "#9d8df1",
              "features": [{"name": "danceability", "pct": 75}, {"name": "energy", "pct": 60}]},
-            {"rank": 2, "label": "Low Energy", "size": 500, "size_display": "500",
+            {"id": "c2", "rank": 2, "label": "Low Energy", "size": 500, "size_display": "500",
              "share_pct": 33.3, "bar_pct": 50, "color": "#f472b6", "features": []},
         ],
-        "popularity": {"r2": 0.42, "rmse": 12.3,
-                       "feature_importances": {"energy": 0.5, "danceability": 0.3}},
+        # T106: the whole-app "sound of Brink" summary (mean of the tribes' audio DNA).
+        "sound": [{"name": "danceability", "pct": 68}, {"name": "energy", "pct": 60}],
     }
     monkeypatch.setattr("app.routers.pages._analytics_data", lambda session: fake)
+    # T106: place the signed-in viewer in the first community so the "Which tribe are you in?" card
+    # renders its populated state. assign_cluster is the on-read T33 step the route calls per viewer.
+    monkeypatch.setattr(
+        "app.routers.pages.assign_cluster",
+        lambda session, user_id: {"cluster": {"id": "c1", "label": "High Valence, High Danceability"},
+                                  "coverage_pct": 42.0},
+    )
     app.dependency_overrides[get_session] = lambda: db_session
     _login(client, monkeypatch)
 
@@ -1200,5 +1210,10 @@ def test_analytics_page_renders_rich_visuals(client, db_session, monkeypatch):
     assert "High Valence, High Danceability" in body         # community label
     assert "Danceability" in body                            # audio-DNA feature label (capitalized)
     assert "the tribes share a lot of taste" in body         # silhouette reading
-    assert "0.420" in body                                   # popularity R² rendered (loop path exercised)
+    # T106 — the viewer's own tribe card (populated state):
+    assert "You're in" in body                               # viewer placed on the map
+    assert "Your tribe's audio DNA" in body                  # their tribe's DNA rendered
+    assert "42%" in body                                     # coverage line (rounded from 42.0)
+    # T106 — the "sound of Brink" card:
+    assert "The sound of Brink" in body
     assert 'href="/auth/logout"' in body                     # signed-in nav

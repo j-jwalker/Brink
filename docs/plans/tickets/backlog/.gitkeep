@@ -1,0 +1,2 @@
+# Keeps the (currently empty) backlog/ directory in git. Every planned ticket is complete as of T14;
+# unbuilt tickets live in ../out-of-scope/. New tickets go here.
