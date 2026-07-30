@@ -276,9 +276,12 @@ agents, not a changelog.
   downloaded fresh each run, since it's gitignored and a runner starts empty; the workflow needs a
   new `DATABASE_URL` repo secret (added alongside `CRON_SECRET`/`SNAPSHOT_URL`). **`T45` (analytics
   UI) is done**: `/analytics` reads the real gold `ModelMetrics`/`Cluster` (no hardcoded numbers)
-  and shows the K-means/community half live; the popularity/second-model slot stays in its graceful
-  "not tracked" state permanently now, with no code change needed (T45 was already built to degrade
-  this way). **With `T14` complete, `docs/plans/tickets/backlog/` is empty** — every planned ticket
+  and shows the K-means/community half live. **`T106`** finished its two ex-placeholder cards:
+  "Which tribe are you in?" now places the signed-in viewer live via the same on-read
+  `assign_cluster` the profile uses (`_viewer_tribe` in `pages.py`), and the old popularity slot
+  (cut with `T36`, ADR-0016) is replaced by **"The sound of Brink"** — the audio traits defining the
+  whole listener base, computed as the mean of every tribe's audio DNA (`a.sound`), a descriptive
+  summary of the trained clusters, not a new prediction. **With `T14` complete, `docs/plans/tickets/backlog/` is empty** — every planned ticket
   is done. Everything unbuilt now lives in `docs/plans/tickets/out-of-scope/`: `T36` (cut), `T75`/
   `T76` (obsoleted by the T60 SPA retirement), and `T99` (the dev/prod DB split, deliberately
   deferred past the deadline — the shared DB stays a known accepted risk; see Watch-outs). The next
